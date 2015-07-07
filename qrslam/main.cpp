@@ -32,6 +32,7 @@ int main(int argc, char** argv)
                 qr_slam.storeData();
                 qr_slam.is_odom_update = false ;
                 qr_slam.is_img_update  = false;
+
             }
         }
         else
