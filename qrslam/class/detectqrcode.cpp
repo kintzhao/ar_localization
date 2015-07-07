@@ -348,12 +348,14 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
                 bool id_was_detected = false;
                 for(int ii = 0 ; ii < detectedID.size(); ii++)
                 {
+                    /*
                     //  lines are represented by 3 values a,b,c for ax+by+c=0   double 	line [4][3]
                     //                    double angle = atan2(-1.0*Mark_info.line[(4-Mark_info.dir+0)%4][0],Mark_info.line[(4-Mark_info.dir+0)%4][1] )*180/3.1415 ;
                     //                    fline<<" line0: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+0)%4][0],Mark_info.line[(4-Mark_info.dir+0)%4][1] )*180/3.1415<<endl;  //line0
                     //                    fline<<" line1: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+1)%4][0],Mark_info.line[(4-Mark_info.dir+1)%4][1] )*180/3.1415<<endl;  //line1
                     //                    fline<<" line2: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+2)%4][0],Mark_info.line[(4-Mark_info.dir+2)%4][1] )*180/3.1415<<endl;  //line2
                     //                    fline<<" line3: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+3)%4][0],Mark_info.line[(4-Mark_info.dir+3)%4][1] )*180/3.1415<<endl;  //line3
+ */
                     if(Mark_info.id == detectedID[ii])
                     {
                         id_was_detected = true;
@@ -394,14 +396,14 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
         //mark有效区间结束
     }
     cout<<"coners.size() "<< coners.size() <<endl;
-    //average
+    //average   将填充的vector< vector > 均值化  // vector< vector > 均值化 成 vector
     for(int i = 0 ; i < coners.size(); i++)
     {
         CPointsFour  c_temp;
         c_temp =  averageCPointsFour(coners[i], 10.0,0.0,2.0,6420);
         //c_temp.ID = detectedID[i];
         cout<<"c_temp.ID "<< c_temp.ID <<endl;
-        imCornerToWorld(c_temp);
+        imCornerToWorld(c_temp);                //图像点像素值转换成物理距离值
         coners_aver.push_back(c_temp);
     }
     cout<<"coners_aver.size() "<< coners_aver.size() <<endl;
@@ -410,9 +412,9 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
     drawCoordinate(show_landmark_img_);
     drawQrcode() ;    //draw the square-qrcode_fourSide
 
-    std::string text1 ="coners_aver_"+ int2str(coners_aver.size() );
+    std::string text1 = "coners_aver_" + int2str(coners_aver.size() );
     cv::putText(show_landmark_img_,text1,cvPoint(60,50),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
-    std::string text2 ="coners_"+ int2str(coners.size());
+    std::string text2 = "coners_" + int2str(coners.size());
     cv::putText(show_landmark_img_,text2,cvPoint(60,100),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
 
     qr_landmark_cvt_->convertOnce(show_landmark_img_);  //display
@@ -432,7 +434,11 @@ void DetctQrcode::drawQrcode(void)   //draw the square-qrcode_fourSide
             cv::line(show_landmark_img_,cv::Point(Mark_.vertex[2][0],Mark_.vertex[2][1]),cv::Point(Mark_.vertex[3][0],Mark_.vertex[3][1]),CV_RGB(255,0,0),1,8);
             cv::line(show_landmark_img_,cv::Point(Mark_.vertex[3][0],Mark_.vertex[3][1]),cv::Point(Mark_.vertex[0][0],Mark_.vertex[0][1]),CV_RGB(255,0,0),1,8);
 
-            string dir_str = int2str(Mark_.dir); string tx0 = "0";string tx1 = "1";string tx2 = "2";string tx3 = "3";
+            string dir_str = int2str(Mark_.dir);
+            string tx0 = int2str((4-Mark_.dir+0)%4);
+            string tx1 = int2str((4-Mark_.dir+1)%4);
+            string tx2 = int2str((4-Mark_.dir+2)%4);
+            string tx3 = int2str((4-Mark_.dir+3)%4);
             cv::putText(show_landmark_img_,dir_str,cv::Point(400,400),CV_FONT_HERSHEY_COMPLEX,2,CV_RGB(0,0,255));
             cv::putText(show_landmark_img_,tx0,cv::Point(Mark_.vertex[(4-Mark_.dir+0)%4][0],Mark_.vertex[(4-Mark_.dir+0)%4][1]),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,0));
             cv::putText(show_landmark_img_,tx1,cv::Point(Mark_.vertex[(4-Mark_.dir+1)%4][0],Mark_.vertex[(4-Mark_.dir+1)%4][1]),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,0));
@@ -880,18 +886,18 @@ void DetctQrcode::imTotruePos(double &width,double &height,double theta)
     height = yy;
 }
 */
-
+/**
+ * @brief DetctQrcode::imCornerToWorld
+ * 将图像提取的像素坐标值转换成实际的物理距离值
+ * 相应数值的显示
+ * @param point_four   五点集
+ */
 void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
 {
     //           X-Width     Y-Height
-    imTotruePos( point_four.corn0.X, point_four.corn0.Y,point_four.ID);
-    cout<<" point_four "<< point_four.center.X<<"  "<< point_four.center.Y<<"   "<<point_four.ID<<"  "<<endl;
-    imTotruePos( point_four.corn1.X, point_four.corn1.Y,point_four.ID);
-    imTotruePos( point_four.corn2.X, point_four.corn2.Y,point_four.ID);
-    imTotruePos( point_four.corn3.X, point_four.corn3.Y,point_four.ID);
-
     cv::line(show_landmark_img_,cvPoint(point_four.center.X,0),cvPoint(point_four.center.X,460),CV_RGB(255,0,0),1,8);
     cv::line(show_landmark_img_,cvPoint(0,point_four.center.Y),cvPoint(620,point_four.center.Y),CV_RGB(255,0,0),1,8);
+
     std::string text_id ="id "+ int2str(point_four.ID);
     cv::putText(show_landmark_img_,text_id,cvPoint(20,160),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
     std::string text_w ="w"+ int2str(point_four.center.X);
@@ -899,6 +905,10 @@ void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
     std::string text_h ="h"+ int2str(point_four.center.Y);
     cv::putText(show_landmark_img_,text_h,cvPoint(140,200),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
 
+    imTotruePos( point_four.corn0.X, point_four.corn0.Y,point_four.ID);
+    imTotruePos( point_four.corn1.X, point_four.corn1.Y,point_four.ID);
+    imTotruePos( point_four.corn2.X, point_four.corn2.Y,point_four.ID);
+    imTotruePos( point_four.corn3.X, point_four.corn3.Y,point_four.ID);
     imTotruePos(point_four.center.X,point_four.center.Y,point_four.ID);
 
     std::string text_x ="x"+ int2str(point_four.center.X);
@@ -909,6 +919,13 @@ void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
 }
 
 //旋转是相对
+/**
+ * @brief DetctQrcode::imTotruePos
+ * 根据几何成像模型把图像像素值转换成物理值
+ * @param width     宽(y向)--> x
+ * @param height    高（x向）--> y
+ * @param id
+ */
 void DetctQrcode::imTotruePos(double &width,double &height,int id)
 {
     double centXoff = height -240;
@@ -951,8 +968,8 @@ CPointsFour DetctQrcode::averageCPointsFour(vector<CPointsFour> data, double mul
         corner3.X += data[i].corn3.X ;
         corner3.Y += data[i].corn3.Y ;
     }
-    center.X =  center.X / count ;
-    center.Y =  center.Y / count ;
+    center.X =    center.X / count ;
+    center.Y =    center.Y / count ;
     corner0.X =  corner0.X / count ;
     corner0.Y =  corner0.Y / count ;
     corner1.X =  corner1.X / count ;
