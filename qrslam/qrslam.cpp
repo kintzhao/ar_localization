@@ -17,19 +17,21 @@ ofstream fvel("vel.txt");
 ofstream fre("re.txt");
 
 ofstream fQrData("qr_data_recorder.txt");
+ofstream fIinitNum("init_num.txt");
+
 
 QrSlam::QrSlam(char* addr):transport_( ar_handle)
 {
     is_odom_update = false;
-    is_img_update  = false;
+    is_img_update_  = false;
     qr_detect_init_num = 0;
     odom_init_num = 0;
     observed_mark_num_old = 0;
     init_start_localization_ = true ;
     coordinate_init_finished_ = false;
-    coordinate_x_ = 0;
-    coordinate_y_ = 0;
-    coordinate_angle_ = 0;
+    coordinate_x_ = 0.0;
+    coordinate_y_ = 0.0;
+    coordinate_angle_ = 0.0;
 
     current_time_ = ros::Time::now();
     last_time_ = ros::Time::now();
@@ -82,7 +84,9 @@ QrSlam::~QrSlam()
  *  getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg)
  *  主要用来订阅turtlebot发布的Topic：   sensor_msgs::ImageConstPtr& img_msg *
  * 1. 单位为：长度为cm 角度为 弧度
- * 2. 图像更新速率为： 发布速率 / ODOMETRY_FREQUENCE_DIFF_
+ * 2. 里程更新速率为： 发布速率 / ODOMETRY_FREQUENCE_DIFF_
+ * ps: 里程更新不应该限频，主要是为了v与w更新。
+ *
  */
 void QrSlam::getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
@@ -147,17 +151,25 @@ void QrSlam::qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg)
         landmark5_vector_ = pQrDetect_->detectLandmarks(cv_ptr->image,visual_mark_num_); //获取的观测值是实际物理距离值
         cout<<"visual_mark_num_  "<<visual_mark_num_<<" landmark5_vector_.size()    "<<landmark5_vector_.size()<<"   "<<endl;
         qr_detect_init_num = 0;
-        is_img_update = true;
-        qrDetectDataStore(landmark5_vector_); //保存detect 数据
+        if( vectorIsValid(landmark5_vector_))
+        {
+           is_img_update_ = true;
+           qrDetectDataStore(landmark5_vector_); //保存detect 数据
+        }
+        else
+            is_img_update_ = false;
         //是否静止初始化 -->提取20的mark
-        if( init_start_localization_ == true && abs(robot_info_.V)<0.05 && abs(robot_info_.W)<0.005)
+        fIinitNum<<"      "<<abs(robot_info_.V)<<"      "<<abs(robot_info_.W)<<"     "<<endl;
+        if( init_start_localization_ == true && abs(robot_info_.V)<0.05 && abs(robot_info_.W)<0.05)
         {   
+           fIinitNum<<visual_mark_num_<<"    visual_mark_num_  "<<"  "<<endl;
             for(int i=0; i<visual_mark_num_;++i )
             {
                 CPointsFour mark_2d = landmark5_vector_.at(i);
                 if(mark_2d.ID == SELECT_MARK_FOR_INIT_ )
                 {
                     mark5_init_vector_.push_back(mark_2d);
+                    fIinitNum<<mark5_init_vector_.size()<<"      "<<endl;
                     cout<<"-----please wait for init mark 20:"<<mark5_init_vector_.size()<<"-----"<<endl;
                 }
             }
@@ -170,6 +182,23 @@ void QrSlam::qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg)
             }
         }
     }
+}
+/**
+ * @brief QrSlam::vectorIsValid
+ * 用于判断vector中是否存在有效landmark,
+ *          如果存在，则返回true；
+ *             否则，返回false.
+ * @param vector_data
+ * @return
+ */
+bool QrSlam::vectorIsValid(vector<CPointsFour> vector_data)
+{
+    for(int i=0;i<vector_data.size();i++)
+    {
+        if(vector_data[i].ID!=-1)
+            return true;
+    }
+    return false;
 }
 /*
  * 将detected的数据进行原始保存
@@ -224,12 +253,15 @@ Point3f QrSlam::diffCoordinate(CPointsFour mark_2d,CPointsFourWorld mark_2d_worl
     d_x =(   (-mark_2d.corn0.X - mark_2d_world.corn0.X) +(-mark_2d.corn1.X - mark_2d_world.corn1.X)
             +(-mark_2d.corn2.X - mark_2d_world.corn2.X) +(-mark_2d.corn3.X - mark_2d_world.corn3.X)
             +(-mark_2d.center.X - mark_2d_world.center.X)   )/5 ;
+
     d_y =(   (-mark_2d.corn0.Y - mark_2d_world.corn0.Y) +(-mark_2d.corn1.Y - mark_2d_world.corn1.Y)
             +(-mark_2d.corn2.Y - mark_2d_world.corn2.Y) +(-mark_2d.corn3.Y - mark_2d_world.corn3.Y)
             +(-mark_2d.center.Y - mark_2d_world.center.Y)  )/5 ;
-    d_theta = -1.0*(  atan2( (mark_2d.corn3.Y - mark_2d.corn0.Y ),(mark_2d.corn3.X - mark_2d.corn0.X ))
+
+    d_theta = -1.0*(  atan2(  (mark_2d.corn3.Y - mark_2d.corn0.Y ),(mark_2d.corn3.X - mark_2d.corn0.X ))
                       +atan2( (mark_2d.corn2.Y - mark_2d.corn1.Y ),(mark_2d.corn2.X - mark_2d.corn1.X ))
                    )/2;
+
     coordinate_data.x = d_x;
     coordinate_data.y = d_y;
     coordinate_data.z = d_theta;
@@ -264,9 +296,9 @@ void QrSlam::ekfSlam(float V, float W)
         miu_state.at<float>(2) = robot_info_.Theta + coordinate_angle_ ;
 
         miu_convar_p =  Mat::zeros(3,3,CV_32FC1);    //这个可以放到初始化函数中去  ？？初值
-        miu_convar_p.at<float>(0,0) = 0.1;//0.1;//1;//100;//0.1;
-        miu_convar_p.at<float>(1,1) = 0.10;//0.1;//1;//100;//0.1;
-        miu_convar_p.at<float>(2,2) = 0.38;//0.1;//0.38;
+        miu_convar_p.at<float>(0,0) = convar_x_ ; // 0.1;//0.1;//1;//100;//0.1;
+        miu_convar_p.at<float>(1,1) = convar_y_ ; //0.10;//0.1;//1;//100;//0.1;
+        miu_convar_p.at<float>(2,2) = convar_theta_ ; //0.38;//0.1;//0.38;
 
         init_EKF_value_ = false;
         TimeOld_ = Time_;

@@ -64,9 +64,6 @@ typedef struct Point3ffi
     }
 }Point3ffi;
 
-
-
-
 typedef struct RobotInfo
 {
     double Vx;
@@ -112,10 +109,16 @@ public :
       const float sigma_r = 0.1;
       const float sigma_phi = 0.1;   //观测模型噪声
 
-      const int SELECT_MARK_FOR_INIT_ =20;
+      const float convar_x_ = 0.1;        // 0.1;//0.1;//1;//100;//0.1;
+      const float convar_y_ = 0.1;        //0.10;//0.1;//1;//100;//0.1;
+      const float convar_theta_ = 0.38;    //0.38;//0.1;//0.38;
+
+      static const int INIT_LOCALIZATION = 20;// 初始定位缓存大小
+
+      const int SELECT_MARK_FOR_INIT_ = 20; // 用作初始定位的landmark id .
 
       const int CAMERA_FREQUENCE_DIFF_ = 1 ;
-      const int ODOMETRY_FREQUENCE_DIFF_ = 2 ;
+      const int ODOMETRY_FREQUENCE_DIFF_ = 1 ;
     RNG   rng;
 
     float Vd_;                            //控制输入线性速度(m/s),,,这是理想的没有噪声的，真实的我们要加入噪声
@@ -193,7 +196,7 @@ public:
     void drawCoordinate(cv::Mat& mat);
     void storeData(void );
     bool is_odom_update ;
-    bool is_img_update;
+    bool is_img_update_;
     Point3ffi addObservationPos(ConerPoint landmarktemp , int id);
     //coordinate change
     float coordinate_x_;
@@ -203,9 +206,10 @@ public:
     bool init_start_localization_;
     void initLocalization( );
     Point3f diffCoordinate(CPointsFour mark_2d,CPointsFourWorld mark_2d_world);
-    static const int INIT_LOCALIZATION = 10;
+
     void  showRobotTriangle(cv::Mat& map, RobotInfo robot_info, Scalar rgb);
     void  qrDetectDataStore( vector<CPointsFour> vector_data );
+    bool vectorIsValid(vector<CPointsFour> vector_data);
 };
 
 #endif

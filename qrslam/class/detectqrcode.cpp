@@ -348,14 +348,12 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
                 bool id_was_detected = false;
                 for(int ii = 0 ; ii < detectedID.size(); ii++)
                 {
-                    /*
-                    //  lines are represented by 3 values a,b,c for ax+by+c=0   double 	line [4][3]
-                    //                    double angle = atan2(-1.0*Mark_info.line[(4-Mark_info.dir+0)%4][0],Mark_info.line[(4-Mark_info.dir+0)%4][1] )*180/3.1415 ;
-                    //                    fline<<" line0: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+0)%4][0],Mark_info.line[(4-Mark_info.dir+0)%4][1] )*180/3.1415<<endl;  //line0
-                    //                    fline<<" line1: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+1)%4][0],Mark_info.line[(4-Mark_info.dir+1)%4][1] )*180/3.1415<<endl;  //line1
-                    //                    fline<<" line2: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+2)%4][0],Mark_info.line[(4-Mark_info.dir+2)%4][1] )*180/3.1415<<endl;  //line2
-                    //                    fline<<" line3: "<<atan2(-1.0*Mark_info.line[(4-Mark_info.dir+3)%4][0],Mark_info.line[(4-Mark_info.dir+3)%4][1] )*180/3.1415<<endl;  //line3
- */
+/**
+ ** 这用 landmark的记录，起始 id_was_detected 为未观测到，将id保存在detectedID中，在vector<vector()>中开辟新vector
+ ** 后面再观察有mark,逐个与detectID比较：
+ **     出现在里面就放入之前开辟的vector中；
+ **     未出现过就将id保存在detectedID中，在vector<vector()>中开辟新vector
+**/
                     if(Mark_info.id == detectedID[ii])
                     {
                         id_was_detected = true;

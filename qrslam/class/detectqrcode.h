@@ -69,25 +69,6 @@ typedef struct CPointsFour
     }
 
 }CPointsFour;
-typedef struct CRectangleFour
-{
-    int ID;
-    ConerPoint corn0;
-    ConerPoint corn1;
-    ConerPoint corn2;
-    ConerPoint corn3;
-    ConerPoint center;
-
-    void init(ConerPoint p0,ConerPoint p1,ConerPoint p2,ConerPoint p3,ConerPoint p4)
-    {
-        corn0.init(p0);
-        corn1.init(p1);
-        corn2.init(p2);
-        corn3.init(p3);
-        center.init(p4);
-    }
-
-}CRectangleFour;
 
 typedef struct ConerPointWorld
 {
@@ -127,8 +108,6 @@ typedef struct CPointsFourWorld
     }
 
 }CPointsFourWorld;
-
-
 
 /// struct
 typedef struct Pose3D
