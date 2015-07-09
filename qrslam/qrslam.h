@@ -100,25 +100,31 @@ public :
     vector<int> Lm_observed_Num;
     int LandmarkSumNum;
 
-      const float a1 = 0.1;
-      const float a2 = 0.1;
-      const float a3 = 0.1;
-      const float a4 = 0.1;
-      const float a5 = 0.1;
-      const float a6 = 0.1;          //a1-a6为速度和里程计模型噪声参数
-      const float sigma_r = 0.1;
-      const float sigma_phi = 0.1;   //观测模型噪声
+    static const int MAP_BASE_Y_ = 150 ;
+    //    static const int MAP_BASE_X_ = 500 ;
+    static const int MAP_BASE_X_ = 100 ;
 
-      const float convar_x_ = 0.1;        // 0.1;//0.1;//1;//100;//0.1;
-      const float convar_y_ = 0.1;        //0.10;//0.1;//1;//100;//0.1;
-      const float convar_theta_ = 0.38;    //0.38;//0.1;//0.38;
+    const float a1 = 0.1;
+    const float a2 = 0.1;
+    const float a3 = 0.1;
+    const float a4 = 0.1;
+//    const float a5 = 0.1;
+//    const float a6 = 0.1;          //a1-a6为速度和里程计模型噪声参数
+    const float sigma_r = 0.1;
+    const float sigma_phi = 0.1;   //观测模型噪声
 
-      static const int INIT_LOCALIZATION = 20;// 初始定位缓存大小
+    const float convar_x_ = 0.0;        // 0.1;//0.1;//1;//100;//0.1;
+    const float convar_y_ = 0.0;        //0.10;//0.1;//1;//100;//0.1;
+    const float convar_theta_ = 0.0044;    //0.38;//0.1;//0.38;
 
-      const int SELECT_MARK_FOR_INIT_ = 20; // 用作初始定位的landmark id .
+    const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };
+    //      const float convar_measure[4] ={ 3811.01352137816,126.695330400850,126.695330400850,4.76963060027493};
 
-      const int CAMERA_FREQUENCE_DIFF_ = 1 ;
-      const int ODOMETRY_FREQUENCE_DIFF_ = 1 ;
+    static const int INIT_LOCALIZATION = 20;// 初始定位缓存大小
+    const int SELECT_MARK_FOR_INIT_ = 20; // 用作初始定位的landmark id .
+
+    const int CAMERA_FREQUENCE_DIFF_ = 1 ;
+    const int ODOMETRY_FREQUENCE_DIFF_ = 1 ;
     RNG   rng;
 
     float Vd_;                            //控制输入线性速度(m/s),,,这是理想的没有噪声的，真实的我们要加入噪声
@@ -184,8 +190,7 @@ public:
     ImageConverter* raw_img_cvt_ = NULL;
     ImageConverter* robot_img_cvt_ = NULL;
     ImageConverter* slam_img_cvt_ = NULL;
-    static const int MAP_BASE_Y_ = 150 ;
-    static const int MAP_BASE_X_ = 500 ;
+
 
     cv::Mat raw_global_map_ ;
     cv::Mat raw_global_map_flip0_ ;

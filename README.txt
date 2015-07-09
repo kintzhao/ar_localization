@@ -82,8 +82,26 @@
 
 ``````````````````````````````````
   8. 协方差说明
+   协方差值越大表示数据可信度越低，也就是该数据的测量代入误差大。统计特性优化
+   1） robot运动输入偏差   Mt
+   2)  运动模型协方差初始值
+   3） 观测模型方差
 
 
+
+   9. 显示相关的说明
+    qr_slam:
+       raw_img_cvt_   =  new ImageConverter("/slam/raw_flip_image");   cv_camera_
+                1.  图像关于原点翻转； 2 显示19的ｉｄ，观测值　d 　与  theta ;3 landmark的数量
+       robot_img_cvt_ =  new ImageConverter("/slam/robot_image");
+                TODO:  加入t时刻的robot: x,y,theta
+       slam_img_cvt_  =  new ImageConverter("/slam/qrslam/slam_map");   raw_global_map_
+                1. 加载地图图片 ；2 画地图基准轴线 ；  3. 画odom下机器人位置，ekfslam下系统状态量，坐标系x y o；
+    detectqrcode：
+        qr_landmark_cvt_ = new ImageConverter("/detect_qr/qr_img");      show_landmark_img_
+           1. 中点，轴线； 2. 2Dmark 轮廓 ； 3. 角点序号
+    usb_cam:
+        /usb_cam/image_raw
 
 
 

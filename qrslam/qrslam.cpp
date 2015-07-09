@@ -18,7 +18,7 @@ ofstream fre("re.txt");
 
 ofstream fQrData("qr_data_recorder.txt");
 ofstream fIinitNum("init_num.txt");
-
+ofstream fOdom("odom.txt");
 
 QrSlam::QrSlam(char* addr):transport_( ar_handle)
 {
@@ -48,8 +48,8 @@ QrSlam::QrSlam(char* addr):transport_( ar_handle)
     }
     else
     {
-        cv::line(raw_global_map_,cv::Point(raw_global_map_.cols/2,0),cv::Point(raw_global_map_.cols/2,raw_global_map_.rows),CV_RGB(255,0,0),3,8);
-        cv::line(raw_global_map_,cv::Point(0,raw_global_map_.rows/2),cv::Point(raw_global_map_.cols,raw_global_map_.rows/2),CV_RGB(255,0,0),3,8);
+        cv::line(raw_global_map_,cv::Point(MAP_BASE_X_,0),cv::Point(MAP_BASE_X_,raw_global_map_.rows),CV_RGB(255,255,0),1,8);
+        cv::line(raw_global_map_,cv::Point(0,MAP_BASE_Y_),cv::Point(raw_global_map_.cols,MAP_BASE_Y_),CV_RGB(255,255,0),1,8);
     }
     pQrDetect_ = new DetctQrcode(addr);
     delta_t_=0.0;
@@ -62,6 +62,7 @@ QrSlam::QrSlam(char* addr):transport_( ar_handle)
     robot_info_.X = robot_info_.Y = robot_info_.Vx = robot_info_.W = robot_info_.Theta = 0.0;
     last_time_ = ros::Time::now();
     fQrData <<"size id c0x y c1x y c2x y c3x y center_x y "<<endl;
+    fOdom<<"x y theta dt v w "<<endl;
 }
 
 QrSlam::~QrSlam()
@@ -121,6 +122,7 @@ void QrSlam::getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg)
         ROS_INFO("start odom");
         cout<<"dt(秒) x y theta v w "<<dt<<" "<<" "<<robot_info_.X<<" "<<robot_info_.Y<<" "<<robot_info_.Theta<<" "<<robot_info_.V<<" "<<robot_info_.W<<std::endl;
         fvel<<" "<<robot_info_.V<<"   "<<robot_info_.W<<"   "<<endl;
+        fOdom<<" "<<robot_info_.X<<" "<<robot_info_.Y<<" "<<robot_info_.Theta<<" "<<dt<<" "<<robot_info_.V<<" "<<robot_info_.W<< endl;
         is_odom_update = true;
     }
 
@@ -441,13 +443,13 @@ void QrSlam::ekfSlam(float V, float W)
 
 
         //计算Vt   Jacibi_u(v,w)
-        Vt.at<float>(0,0) = (-sin(last_miu_theta)+sin(last_miu_theta+Wd_*delta_t_))/Wd_; Vt.at<float>(0,1)=Vd_*(sin(last_miu_theta)-sin(last_miu_theta+Wd_*delta_t_))/Wd_/Wd_+Vd_*cos(last_miu_theta+Wd_*delta_t_)*delta_t_/Wd_;
-        Vt.at<float>(1,0) = (cos(last_miu_theta)-cos(last_miu_theta+Wd_*delta_t_))/Wd_;  Vt.at<float>(1,1)=-Vd_*(cos(last_miu_theta)-cos(last_miu_theta+Wd_*delta_t_))/Wd_/Wd_+Vd_*sin(last_miu_theta+Wd_*delta_t_)*delta_t_/Wd_;
-        Vt.at<float>(2,0) = 0;                          	                                Vt.at<float>(2,1)=delta_t_;
+        Vt.at<float>(0,0) = (-sin(last_miu_theta) + sin(last_miu_theta+Wd_*delta_t_))/Wd_; Vt.at<float>(0,1)=Vd_*(sin(last_miu_theta)-sin(last_miu_theta+Wd_*delta_t_))/Wd_/Wd_+Vd_*cos(last_miu_theta+Wd_*delta_t_)*delta_t_/Wd_;
+        Vt.at<float>(1,0) =  (cos(last_miu_theta) - cos(last_miu_theta+Wd_*delta_t_))/Wd_; Vt.at<float>(1,1)=-Vd_*(cos(last_miu_theta)-cos(last_miu_theta+Wd_*delta_t_))/Wd_/Wd_+Vd_*sin(last_miu_theta+Wd_*delta_t_)*delta_t_/Wd_;
+        Vt.at<float>(2,0) = 0;                          	                               Vt.at<float>(2,1)=delta_t_;
 
         //计算Mt   motion noise ;  why add the motion noise   ?????
-        Mt.at<float>(0,0) = a1*Vd_*Vd_+a2*Wd_*Wd_;
-        Mt.at<float>(1,1) = a3*Vd_*Vd_+a4*Wd_*Wd_;
+        Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
+        Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
         Rt = Vt*Mt*Vt.t();//计算Rt
 
         //计算预测方差矩阵miu_convar_p
@@ -456,8 +458,14 @@ void QrSlam::ekfSlam(float V, float W)
         x_convar_p_prediction = Gt*miu_convar_p*Gt.t() + Fx.t()*Rt*Fx; //计算预测方差 Px  ??????????  xP_SLAM  与 xPred_SLAM
 
         //计算Qt
-        Qt.at<float>(0,0) = sigma_r*sigma_r;
-        Qt.at<float>(1,1) = sigma_phi*sigma_phi;
+//        Qt.at<float>(0,0) = sigma_r*sigma_r;
+//        Qt.at<float>(1,1) = sigma_phi*sigma_phi;
+
+        Qt.at<float>(0,0) = convar_measure[0];
+        Qt.at<float>(0,1) = convar_measure[1];
+        Qt.at<float>(1,0) = convar_measure[2];
+        Qt.at<float>(1,1) = convar_measure[3];
+
         /////----------------------------------------------------------------------------------------------------------
         //    LandmarkVector = pLocalizer->QrCodeMapping(MarkVisualNum);
         //    GenObservations();
@@ -821,12 +829,14 @@ void QrSlam::showRobotTriangle(cv::Mat& map, RobotInfo robot_info, Scalar rgb)
 {
     float width =3;
     Point robot_pos;
-    robot_pos.x = robot_info.X + MAP_BASE_X_;
-    robot_pos.y = map.rows-(robot_info.Y + MAP_BASE_Y_);
+    robot_pos.x = robot_info.X + MAP_BASE_X_ ;
+    robot_pos.y = -robot_info.Y + MAP_BASE_Y_ ;    //odom robot 方向
+//    robot_pos.y = map.rows - (robot_info.Y + MAP_BASE_Y_);
+
 
     Point Pa,Pb,Pc,Pd,Pe;
-    float width_cos= width*cos(robot_info.Theta);
-    float width_sin= width*sin(robot_info.Theta);
+    float width_cos = width*cos(robot_info.Theta);
+    float width_sin = width*sin(robot_info.Theta);
 
     Pa.x = robot_pos.x + 1.7*width_cos; Pa.y = robot_pos.y + 1.7*width_sin;
     Pd.x = robot_pos.x - 1.7*width_cos; Pd.y = robot_pos.y - 1.7*width_sin;
@@ -856,11 +866,13 @@ void QrSlam::showLandmark(cv::Mat& map, Scalar rgb)
     // cv::Mat map_copy ;
     static bool first = false;
     cout<<miu_state.cols<<" "<<miu_state.rows<<endl;
+    frobot<<" "<<miu_state.at<float>(0)<<" "<<miu_state.at<float>(1)<<endl;
     int temp_X= miu_state.at<float>(0)+ MAP_BASE_X_;
     int temp_Y= miu_state.at<float>(1)+ MAP_BASE_Y_;
     temp_Y = map.rows - temp_Y ;
-    frobot<<" "<<temp_X<<" "<<temp_Y<<endl;
-    cv::circle(map,cvPoint( temp_X,temp_Y),3,CV_RGB(0, 255,0),2); //绘制 robot
+
+   // frobot<<" "<<temp_X<<" "<<temp_Y<<endl;
+    cv::circle(map,cvPoint( temp_X,temp_Y),1,CV_RGB(0, 255,0),1); //绘制 robot
 
     for(int t=0;t<observed_landmark_num.size();t++)
     {
