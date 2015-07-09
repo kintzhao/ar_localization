@@ -39,26 +39,26 @@
 
 
 
-<ht20>2.36</ht20>
+<ht20>2.62</ht20>
 <orients20>0</orients20>
 <xoff20>0.0</xoff20>
 <yoff20>0.0</yoff20>
 <sideSizes20>37.5</sideSizes20>
 
-<corn0x20> 18.75</corn0x20>
-<corn0y20>-18.75</corn0y20>
+<corn0x20>-18.75</corn0x20>
+<corn0y20> 18.75</corn0y20>
 <corn0z20> 0.0  </corn0z20>
 
 <corn1x20> 18.75</corn1x20>
-<corn1y20> 18.75</corn1y20>
+<corn1y20>-18.75</corn1y20>
 <corn1z20> 0.0  </corn1z20>
 
-<corn2x20>-18.75</corn2x20>
-<corn2y20> 18.75</corn2y20>
+<corn2x20> 18.75</corn2x20>
+<corn2y20>-18.75</corn2y20>
 <corn2z20> 0.0  </corn2z20>
 
-<corn3x20>-18.75</corn3x20>
-<corn3y20>-18.75</corn3y20>
+<corn3x20> 18.75</corn3x20>
+<corn3y20> 18.75</corn3y20>
 <corn3z20> 0.0  </corn3z20>
 
 <centerx20> 0.0</centerx20>
