@@ -780,7 +780,8 @@ double QrSlam::odom_aver(double*  Vodom,int n)
 void  QrSlam::showImage()
 {
     cout<<"robot_info "<<robot_info_.X<<"  "<<robot_info_.Y<<endl;
-    showRobotTriangle(raw_global_map_, robot_info_,CV_RGB(0,0,0)) ;
+//    showRobotTriangle(raw_global_map_, robot_info_,CV_RGB(0,0,0)) ;
+    showRobot(raw_global_map_, robot_info_,CV_RGB(0,0,0)) ;
 
     //robot_img_cvt_->convertOnce(raw_global_map_);
     showLandmark(raw_global_map_,CV_RGB(0,0,255));
@@ -867,8 +868,8 @@ void QrSlam::showLandmark(cv::Mat& map, Scalar rgb)
     static bool first = false;
     cout<<miu_state.cols<<" "<<miu_state.rows<<endl;
     frobot<<" "<<miu_state.at<float>(0)<<" "<<miu_state.at<float>(1)<<endl;
-    int temp_X= miu_state.at<float>(0)+ MAP_BASE_X_;
-    int temp_Y= miu_state.at<float>(1)+ MAP_BASE_Y_;
+    int temp_X = miu_state.at<float>(0)+ MAP_BASE_X_;
+    int temp_Y = miu_state.at<float>(1)+ MAP_BASE_Y_;
     temp_Y = map.rows - temp_Y ;
 
    // frobot<<" "<<temp_X<<" "<<temp_Y<<endl;
@@ -888,21 +889,15 @@ void QrSlam::showLandmark(cv::Mat& map, Scalar rgb)
             first = true ; //首次出现作标记
         }
         //        map.copyTo(map_copy);
-
         //        std::string  X_text = float2str(X);
         //        cv::putText(cv_camera_,X_text,cvPoint( 80*(t+1),80),CV_FONT_HERSHEY_COMPLEX, 1, CV_RGB(0, 0,255) );
-
         //        std::string  Y_text = float2str(Y);
         //        cv::putText(cv_camera_,Y_text,cvPoint( 120,80*(t+1)),CV_FONT_HERSHEY_COMPLEX, 1, CV_RGB(0, 0,255) );
-
     }
     std::string  num_text = int2str(observed_landmark_num.size());
     cv::putText(cv_camera_,num_text,cvPoint( 40,40),CV_FONT_HERSHEY_COMPLEX, 1, CV_RGB(0, 0,255) );
-
     state_miu<<" "<<endl;
-
     raw_img_cvt_->convertOnce(cv_camera_);
-
     // map_copy.copyTo(map);
 }
 
