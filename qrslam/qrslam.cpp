@@ -216,7 +216,7 @@ void QrSlam::qrDetectDataStore( vector<CPointsFour> vector_data )
     {
         fQrData <<" "<< vector_data[i].ID <<" "<< vector_data[i].corn0.X <<" "<<vector_data[i].corn0.Y  <<" "<< vector_data[i].corn1.X<<" "<<vector_data[i].corn1.Y
                <<" "<< vector_data[i].corn2.X <<" "<<vector_data[i].corn2.Y  <<" "<< vector_data[i].corn3.X<<" "<<vector_data[i].corn3.Y
-              <<" "<< vector_data[i].center.X<<" "<<vector_data[i].center.Y;
+              <<" "<< vector_data[i].center.X<<" "<<vector_data[i].center.Y;  
     }
     fQrData <<" "<< endl;
 }
@@ -395,20 +395,9 @@ void QrSlam::ekfSlam(float V, float W)
 
         Vd_ = VEL.x;
         Wd_ = VEL.y;  //  取y  标准正向
-        cout<<"Vd: "<<Vd_<<"   "<<"Wd"<<Wd_<<endl;
-        if( Wd_ < 0.00006 && Wd_ >=0)  Wd_ = 0.00006;
-        if( Wd_ > -0.00006 && Wd_ <0)  Wd_ = -0.00006;
-        cout<<"vd/wd"<<Vd_/Wd_<<endl;
-        //        float Vr_noise, Wr_noise, Sigv, Sigw;
-        //        Sigv = a1*Vd_*Vd_+a2*Wd_*Wd_;
-        //        Sigw = a3*Vd_*Vd_+a4*Wd_*Wd_;
-        //        Vr_noise = genGaussianValue(Sigv);
-        //        Wr_noise = genGaussianValue(Sigw);
-
-        //        Vd_ = VEL.x + Vr_noise;
-        //        Wd_ = VEL.y + Wr_noise;
-        //        if( Wd_ <0.00006 && Wd_ >=0)  Wd_ =0.0001;
-        //        if( Wd_ >-0.00006 && Wd_ <0)  Wd_ =-0.0001;
+        if( Wd_ < 0.00006  && Wd_ >= 0)  Wd_ = 0.00006;
+        if( Wd_ > -0.00006 && Wd_ <  0)  Wd_ = -0.00006;
+        cout<<"Vd: "<<Vd_<<"   "<<" Wd "<<Wd_<<" vd/wd "<<Vd_/Wd_<<endl;
 
         ////基于EKF的SLAM方法， 条件有当前观测量Observations， 上一时刻估计所得机器人位置
         //计算Ft
@@ -423,7 +412,7 @@ void QrSlam::ekfSlam(float V, float W)
         //speed mode motion increase   Wd 不能为 0
         cal_temp.at<float>(0) =  -Vd_/Wd_*sin(last_miu_theta) + Vd_/Wd_*sin(last_miu_theta+Wd_*delta_t_);
         cal_temp.at<float>(1) =   Vd_/Wd_*cos(last_miu_theta) - Vd_/Wd_*cos(last_miu_theta+Wd_*delta_t_);
-        cal_temp.at<float>(2) =  Wd_*delta_t_;
+        cal_temp.at<float>(2) =   Wd_*delta_t_;
         cout<<"cal_temp"<<cal_temp<<endl;
 
         ///prediction
@@ -448,8 +437,14 @@ void QrSlam::ekfSlam(float V, float W)
         Vt.at<float>(2,0) = 0;                          	                               Vt.at<float>(2,1)=delta_t_;
 
         //计算Mt   motion noise ;  why add the motion noise   ?????
-        Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
-        Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
+//        Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
+//        Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
+        Mt.at<float>(0,0) = a1;
+        Mt.at<float>(0,1) = a2;
+        Mt.at<float>(1,0) = a3;
+        Mt.at<float>(1,1) = a4;
+
+
         Rt = Vt*Mt*Vt.t();//计算Rt
 
         //计算预测方差矩阵miu_convar_p

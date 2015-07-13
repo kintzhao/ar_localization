@@ -7,6 +7,9 @@
 #include "detectqrcode.h"
 ofstream fthreshold("threshold.txt");
 ofstream fline("line.txt");
+ofstream fPixPos("pixpos.txt");
+
+
 DetctQrcode::DetctQrcode(char * mapFile)
 {
     useBCH = false;
@@ -49,6 +52,7 @@ DetctQrcode::DetctQrcode(char * mapFile)
 
     p_tracker_marks_ = new TrackerSingleMarker(ar_mode_width, ar_mode_height, 5, 6, 6, 6, 0);
     qr_landmark_cvt_ = new ImageConverter("/detect_qr/qr_img");
+    fPixPos <<"id corn0_x y corn1_x y coen2_x y corn3_x y center_x y  …… "<<endl;
 }
 DetctQrcode::~DetctQrcode()
 {
@@ -401,9 +405,14 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
         c_temp =  averageCPointsFour(coners[i], 10.0,0.0,2.0,6420);
         //c_temp.ID = detectedID[i];
         cout<<"c_temp.ID "<< c_temp.ID <<endl;
+        fPixPos <<" "<<c_temp.ID
+                <<" "<<c_temp.corn0.X<<" "<<c_temp.corn0.Y<<" "<<c_temp.corn1.X<<" "<<c_temp.corn1.Y<<" "
+                <<" "<<c_temp.corn2.X<<" "<<c_temp.corn2.Y<<" "<<c_temp.corn3.X<<" "<<c_temp.corn3.Y<<" "
+                <<" "<<c_temp.center.X<<" "<<c_temp.center.Y<<" ";
         imCornerToWorld(c_temp);                //图像点像素值转换成物理距离值
         coners_aver.push_back(c_temp);
     }
+    fPixPos <<" "<<endl;
     cout<<"coners_aver.size() "<< coners_aver.size() <<endl;
     MarkNum = coners_aver.size() ;
 

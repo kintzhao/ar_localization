@@ -104,10 +104,17 @@ public :
     //    static const int MAP_BASE_X_ = 500 ;
     static const int MAP_BASE_X_ = 100 ;
 
-    const float a1 = 0.1;
-    const float a2 = 0.1;
-    const float a3 = 0.1;
-    const float a4 = 0.1;
+//    const float a1 = 0.087;//0.1;
+//    const float a2 = 0.002;//0.1;
+//    const float a3 = 0.1203;//0.1;
+//    const float a4 = -0.0037;//0.1;
+
+    const float a1 = 0.1583;//0.1;
+    const float a2 = 0.0032;//0.1;
+    const float a3 = 0.0032;//0.1;
+    const float a4 = 0.0016;//0.1;
+
+
 //    const float a5 = 0.1;
 //    const float a6 = 0.1;          //a1-a6为速度和里程计模型噪声参数
     const float sigma_r = 0.1;
