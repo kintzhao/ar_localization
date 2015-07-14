@@ -28,8 +28,8 @@ int main(int argc, char** argv)
             if( qr_slam.is_odom_update && qr_slam.is_img_update_)
             {
                 qr_slam.ekfSlam(qr_slam.robot_info_.V,qr_slam.robot_info_.W);
-                qr_slam.showImage();
                 qr_slam.storeData();
+                qr_slam.showImage();
                 qr_slam.is_odom_update = false ;
                 qr_slam.is_img_update_  = false;
             }

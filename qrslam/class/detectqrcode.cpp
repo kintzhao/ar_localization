@@ -291,9 +291,9 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
     gray = image.clone();
     cv::cvtColor(image,gray,CV_BGR2GRAY);
     show_landmark_img_ = image.clone();
-    cv::rectangle(show_landmark_img_,cvPoint(319,239),cvPoint(321,241),CV_RGB(0,255,0),1,8); //圈取图像中心点
-    cv::line(show_landmark_img_,cvPoint(320,0),cvPoint(320,480),CV_RGB(0,0,0),1,8);
-    cv::line(show_landmark_img_,cvPoint(0,240),cvPoint(640,240),CV_RGB(0,0,0),1,8);
+    cv::rectangle(show_landmark_img_,Point(319,239),Point(321,241),CV_RGB(0,255,0),1,8); //圈取图像中心点
+    cv::line(show_landmark_img_,Point(320,0),Point(320,480),CV_RGB(0,0,0),1,8);
+    cv::line(show_landmark_img_,Point(0,240),Point(640,240),CV_RGB(0,0,0),1,8);
     //    TrackerSingleMarker* ptrackerWhole = new TrackerSingleMarker(ar_mode_width, ar_mode_height, 5, 6, 6, 6, 0);
     trackerFunction(p_tracker_marks_);//ARToolkitplus 处理二维码信息  1000次自动track
     int tryCount = 0;
@@ -420,9 +420,9 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
     drawQrcode() ;    //draw the square-qrcode_fourSide
 
     std::string text1 = "coners_aver_" + int2str(coners_aver.size() );
-    cv::putText(show_landmark_img_,text1,cvPoint(60,50),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+    cv::putText(show_landmark_img_,text1,Point(60,50),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
     std::string text2 = "coners_" + int2str(coners.size());
-    cv::putText(show_landmark_img_,text2,cvPoint(60,100),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+    cv::putText(show_landmark_img_,text2,Point(60,100),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
 
     qr_landmark_cvt_->convertOnce(show_landmark_img_);  //display
     //  return QrMarks;  //返回的值是实际距离值
@@ -453,9 +453,9 @@ void DetctQrcode::drawQrcode(void)   //draw the square-qrcode_fourSide
             cv::putText(show_landmark_img_,tx3,cv::Point(Mark_.vertex[(4-Mark_.dir+3)%4][0],Mark_.vertex[(4-Mark_.dir+3)%4][1]),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,0));
 
             std::string text ="ID_"+ int2str(Mark_.id);
-            cv::putText(show_landmark_img_,text,cvPoint(Mark_.pos[0],Mark_.pos[1]),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
+            cv::putText(show_landmark_img_,text,Point(Mark_.pos[0],Mark_.pos[1]),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
 
-            cv::rectangle(show_landmark_img_,cvPoint(Mark_.pos[0]-1,Mark_.pos[1]-1),cvPoint(Mark_.pos[0]+1,Mark_.pos[1]+1),CV_RGB(0,255,0),1,8); //圈取图像中心点
+            cv::rectangle(show_landmark_img_,Point(Mark_.pos[0]-1,Mark_.pos[1]-1),Point(Mark_.pos[0]+1,Mark_.pos[1]+1),CV_RGB(0,255,0),1,8); //圈取图像中心点
 
             //        cv::line(show_landmark_img_,cvPoint(Mark_.pos[0],0),cvPoint(Mark_.pos[0],460),CV_RGB(255,0,0),1,8);
             //        cv::line(show_landmark_img_,cvPoint(0,Mark_.pos[1]),cvPoint(620,Mark_.pos[1]),CV_RGB(255,0,0),1,8);
@@ -468,14 +468,14 @@ void DetctQrcode::drawQrcode(void)   //draw the square-qrcode_fourSide
 void DetctQrcode::drawCoordinate(cv::Mat& mat)
 {
     std::string text ="X";
-    cv::putText(mat,text,cvPoint(20,mat.rows-20),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+    cv::putText(mat,text,Point(20,mat.rows-20),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
     cv::line(mat,cv::Point(1,1),cv::Point(1,mat.rows),CV_RGB(255,0,0),1,8);
 
     text ="O";
-    cv::putText(mat,text,cvPoint(20,20),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+    cv::putText(mat,text,Point(20,20),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
 
     text ="Y";
-    cv::putText(mat,text,cvPoint(mat.cols-20,20),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+    cv::putText(mat,text,Point(mat.cols-20,20),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
     cv::line(mat,cv::Point(1,1),cv::Point(mat.cols,1),CV_RGB(255,0,0),1,8);
 }
 
@@ -902,15 +902,15 @@ void DetctQrcode::imTotruePos(double &width,double &height,double theta)
 void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
 {
     //           X-Width     Y-Height
-    cv::line(show_landmark_img_,cvPoint(point_four.center.X,0),cvPoint(point_four.center.X,460),CV_RGB(255,0,0),1,8);
-    cv::line(show_landmark_img_,cvPoint(0,point_four.center.Y),cvPoint(620,point_four.center.Y),CV_RGB(255,0,0),1,8);
+    cv::line(show_landmark_img_,Point(point_four.center.X,0),Point(point_four.center.X,460),CV_RGB(255,0,0),1,8);
+    cv::line(show_landmark_img_,Point(0,point_four.center.Y),Point(620,point_four.center.Y),CV_RGB(255,0,0),1,8);
 
     std::string text_id ="id "+ int2str(point_four.ID);
-    cv::putText(show_landmark_img_,text_id,cvPoint(20,160),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
+    cv::putText(show_landmark_img_,text_id,Point(20,160),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
     std::string text_w ="w"+ int2str(point_four.center.X);
-    cv::putText(show_landmark_img_,text_w,cvPoint(20,200),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
+    cv::putText(show_landmark_img_,text_w,Point(20,200),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
     std::string text_h ="h"+ int2str(point_four.center.Y);
-    cv::putText(show_landmark_img_,text_h,cvPoint(140,200),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
+    cv::putText(show_landmark_img_,text_h,Point(140,200),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
 
     imTotruePos( point_four.corn0.X, point_four.corn0.Y,point_four.ID);
     imTotruePos( point_four.corn1.X, point_four.corn1.Y,point_four.ID);
@@ -919,9 +919,9 @@ void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
     imTotruePos(point_four.center.X,point_four.center.Y,point_four.ID);
 
     std::string text_x ="x"+ int2str(point_four.center.X);
-    cv::putText(show_landmark_img_,text_x,cvPoint(20,260),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
+    cv::putText(show_landmark_img_,text_x,Point(20,260),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
     std::string text_y ="y"+ int2str(point_four.center.Y);
-    cv::putText(show_landmark_img_,text_y,cvPoint(140,260),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
+    cv::putText(show_landmark_img_,text_y,Point(140,260),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
 
 }
 

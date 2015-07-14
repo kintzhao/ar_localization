@@ -41,7 +41,7 @@ int CameraCalibrator::addChessboardPoints(
     cv::Mat image; // to contain chessboard image
     int successes = 0;
     // for all viewpoints
-    for (uint i=0; i<filelist.size(); i++) {
+    for (int i=0; i<filelist.size(); i++) {
 
         // Open the image
         image = cv::imread(filelist[i],0);

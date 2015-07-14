@@ -35,6 +35,8 @@
 #include "../image_convert/image_converter.h"
 
 #define undistort 0//1
+#define DATAFUSION 4 //1
+
 
 using ARToolKitPlus::TrackerSingleMarker;
 using ARToolKitPlus::ARMarkerInfo;
@@ -144,6 +146,7 @@ public :
     void    angleWrap(float& angle);
     float   genGaussianValue(float Sigma2);   //generate a Gaussian value with variance sigma2
     void    displayMatrix(Mat matrix) ;
+    void    writeMatrix(Mat matrix) ;
 
     cv::Mat landmark_miu_conver_p_;   //协方差椭圆图时用到
 
@@ -163,8 +166,10 @@ public:
     int mark5_init_num;
 
 
-    double Vodom[8];
-    double Wodom[8];
+    double Vodom[DATAFUSION];
+    double Wodom[DATAFUSION];
+    int    data_filter_num;
+
     int     odom_i;
     int  odom_init_;
     bool init_EKF_value_;
@@ -204,6 +209,8 @@ public:
     cv::Mat cv_camera_;
     cv::Mat qr_detect_;
     void showRobot(Mat &map, RobotInfo robot_info, Scalar rgb);
+    void showRobotOrientation(Mat image, RobotInfo robot_info, Scalar rgb, int x_coordinate, int y_coordinate);
+    void showRobotOrientation(Mat image, Mat robot_info,Scalar rgb,int x_coordinate,int y_coordinate);
     void showLandmark(Mat &map, Scalar rgb);
     void drawCoordinate(cv::Mat& mat);
     void storeData(void );
@@ -221,7 +228,8 @@ public:
 
     void  showRobotTriangle(cv::Mat& map, RobotInfo robot_info, Scalar rgb);
     void  qrDetectDataStore( vector<CPointsFour> vector_data );
-    bool vectorIsValid(vector<CPointsFour> vector_data);
+    bool  vectorIsValid(vector<CPointsFour> vector_data);
+    void  dataFilter(double &v, double &w);
 };
 
 #endif
