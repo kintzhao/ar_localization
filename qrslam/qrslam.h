@@ -35,7 +35,12 @@
 #include "../image_convert/image_converter.h"
 
 #define undistort 0//1
-#define DATAFUSION 4 //1
+#define DATA_FUSION 10      //1   滑动均值窗口的大小
+
+#define OPEN_DATA_FILTER 1   //1  角速度打开数据滤波
+
+#define SELECT_LANDMARK_NUM 0   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
+
 
 
 using ARToolKitPlus::TrackerSingleMarker;
@@ -166,8 +171,8 @@ public:
     int mark5_init_num;
 
 
-    double Vodom[DATAFUSION];
-    double Wodom[DATAFUSION];
+    double Vodom[DATA_FUSION];
+    double Wodom[DATA_FUSION];
     int    data_filter_num;
 
     int     odom_i;
