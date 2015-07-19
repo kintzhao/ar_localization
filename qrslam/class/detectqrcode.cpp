@@ -6,7 +6,6 @@
 
 #include "detectqrcode.h"
 ofstream fthreshold("threshold.txt");
-ofstream fline("line.txt");
 ofstream fPixPos("pixpos.txt");
 
 
@@ -14,7 +13,7 @@ DetctQrcode::DetctQrcode(char * mapFile)
 {
     useBCH = false;
     // display = cv::Mat::zeros(640,480,CV_32F);
-    for(int i=0;i<20;i++)
+    for (int i=0;i<20;i++)
     {
         mark_arrys[i].Id = -1;
     }
@@ -25,14 +24,14 @@ DetctQrcode::DetctQrcode(char * mapFile)
     }
     createMap( input_data_, mapFile);
     //迭代操作  初始化vextor[0-599]:  ht orients xoff yoff sideSizes
-    if(!readConfigureMessage(60))
+    if (!readConfigureMessage(60))
     {
         cout<<"read configure erro"<<endl;
         waitKey();
     }
     else
         cout<<"configure message read finished!"<<endl;   //
-    if(!readMarkForLocalization(20))
+    if (!readMarkForLocalization(20))
     {
         cout<<"check the message of mark 20 in configure"<<endl;
         waitKey();
@@ -53,9 +52,14 @@ DetctQrcode::DetctQrcode(char * mapFile)
     p_tracker_marks_ = new TrackerSingleMarker(ar_mode_width, ar_mode_height, 5, 6, 6, 6, 0);
     qr_landmark_cvt_ = new ImageConverter("/detect_qr/qr_img");
     fPixPos <<"id corn0_x y corn1_x y coen2_x y corn3_x y center_x y  …… "<<endl;
+    if ((p_tracker_marks_ == NULL) || (qr_landmark_cvt_ == NULL))
+    {
+        exit(1);
+    }
 }
 DetctQrcode::~DetctQrcode()
 {
+    cv::imwrite("./2d_mark",show_landmark_img_);
     if (!qr_landmark_cvt_)
     {
         delete qr_landmark_cvt_;
@@ -81,7 +85,7 @@ bool DetctQrcode::readConfigureMessage(int max_num)
     if ( it != input_data_.end() )
         img_H_ = atoi( it->second.c_str() ) ; // Add data to the end of the %vector.
 
-    for(int hti = 0 ; hti < max_num ; hti++)
+    for (int hti = 0 ; hti < max_num ; hti++)
     {
         //配置参数字符等价
         std::string htstr = arrToStr("ht",hti);
@@ -121,14 +125,14 @@ bool DetctQrcode::readConfigureMessage(int max_num)
         else
             side_sizes_.push_back(0.0);
     }
-    if(side_sizes_.empty()||ht_.empty()||x_off_.empty()||y_off_.empty())
+    if (side_sizes_.empty()||ht_.empty()||x_off_.empty()||y_off_.empty())
         flag = false;
     else //configure no empty
     {
         flag = true;
-        for( int hti = 0 ; hti < max_num ; hti++)
+        for ( int hti = 0 ; hti < max_num ; hti++)
         {
-            if(ht_[hti]!=0)
+            if (ht_[hti]!=0)
             {
                 cout<<" Mark Id: "<<hti<<"have been marked.\n"<<endl;
                 cout<<" ht["<<hti<<"]="<<ht_[hti]<<endl;
@@ -261,7 +265,6 @@ bool DetctQrcode::readMarkForLocalization(int id)
     return flag ;
 }
 
-
 /*
  * CPointsFourWorld DetctQrcode::getInitMarkMessage(int id)
  *    回调id的二维码初始配置坐标信息
@@ -285,6 +288,7 @@ CPointsFourWorld DetctQrcode::getInitMarkMessage(const int id)
 */
 vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
 {
+    found_code = false;
     loopClear();
     if (undistort)          //    #define undistort 1
        cv::remap(image, image, map1_, map2_, cv::INTER_LINEAR);
@@ -294,20 +298,35 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
     cv::rectangle(show_landmark_img_,Point(319,239),Point(321,241),CV_RGB(0,255,0),1,8); //圈取图像中心点
     cv::line(show_landmark_img_,Point(320,0),Point(320,480),CV_RGB(0,0,0),1,8);
     cv::line(show_landmark_img_,Point(0,240),Point(640,240),CV_RGB(0,0,0),1,8);
-    //    TrackerSingleMarker* ptrackerWhole = new TrackerSingleMarker(ar_mode_width, ar_mode_height, 5, 6, 6, 6, 0);
-    trackerFunction(p_tracker_marks_);//ARToolkitplus 处理二维码信息  1000次自动track
-    int tryCount = 0;
-    // int  qr_valid_num =0;
-    while(tryCount < 253)
+    //TrackerSingleMarker* ptrackerWhole = new TrackerSingleMarker(ar_mode_width, ar_mode_height, 5, 6, 6, 6, 0);
+
+    // trackerFunction(p_tracker_marks_); // 下面qr提取前期一系列的操作的封装　　ARToolkitplus 处理二维码信息  1000次自动track
+    p_tracker_marks_->setPixelFormat(ARToolKitPlus::PIXEL_FORMAT_LUM);
+    if (!p_tracker_marks_->init("./data/no_distortion.cal", 1.0f, 1000.0f)) // load MATLAB file
     {
-        if( input_data_[std::string("processingType")] == std::string("1") || input_data_[std::string("processingType")] == std::string("3") )
-        {
-            p_tracker_marks_->setThreshold(tryCount+1);
-        }
-        else
-        {
-            tryCount = 300;
-        }
+        printf("ERROR:p_tracker_marks_->init（） failed\n");
+    }
+    p_tracker_marks_->setPatternWidth(2.0);
+    p_tracker_marks_->setBorderWidth(useBCH ? 0.125 : 0.25);    //  const bool useBCH = false;
+    p_tracker_marks_->setUndistortionMode(ARToolKitPlus::UNDIST_LUT);
+    p_tracker_marks_->setMarkerMode(useBCH ? ARToolKitPlus::MARKER_ID_BCH : ARToolKitPlus::MARKER_ID_SIMPLE);
+    /// Turns automatic threshold calculation on/off
+    p_tracker_marks_->activateAutoThreshold(false);
+    //p_tracker_marks_->setNumAutoThresholdRetries(1000);
+
+    int tryCount = 50;
+    // int  qr_valid_num =0;
+    while(tryCount < 253 && !found_code )
+//    while(tryCount < 200)
+    {
+//        if ( input_data_[std::string("processingType")] == std::string("1") || input_data_[std::string("processingType")] == std::string("3") )
+//        {
+//            p_tracker_marks_->setThreshold(tryCount+1);
+//        }
+//        else
+//        {
+//            tryCount = 300;
+//        }
         //Returns:detected markers in image
         /*
           * int 	area
@@ -318,14 +337,11 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
             double 	pos [2]
             double 	vertex [4][2]
             Detailed Description
-
             main structure for detected marker.
-
             Store information after contour detection (in idea screen coordinate, after distorsion compensated).
 
             Remarks:
                 lines are represented by 3 values a,b,c for ax+by+c=0
-
             Parameters:
                 area	number of pixels in the labeled region
                 id	marker identitied number
@@ -335,22 +351,24 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
                 line	line equations for four side of the marker (in ideal screen coordinates)
                 vertex	edge points of the marker (in ideal screen coordinates)
         */
+        p_tracker_marks_->setThreshold(tryCount);
         std::vector<int> markerId = p_tracker_marks_->calc(gray.data, &nMarker_info, &nNumMarkers);
         cout<<"nNumMarkers"<<nNumMarkers<<"  "<<markerId.size()<<endl;
         int value_thre =  p_tracker_marks_->getThreshold();
-        fthreshold<<" threshold value:  "<< value_thre << endl; // 二值化阈值
+        fthreshold<<"  "<< value_thre; // 二值化阈值
         tryCount++;
-        for(int i = 0 ; i < nNumMarkers ; i++)
+        tryCount = tryCount + 5;
+        for (int i = 0 ; i < nNumMarkers ; i++)
         {
             cout<<"nMarker_info[i].id "<<nMarker_info[i].id<<endl;
-            if( (nMarker_info[i].id != -1) && (ht_[nMarker_info[i].id] > 0.1) )
+            if ( (nMarker_info[i].id != -1) && (ht_[nMarker_info[i].id] > 0.1) )
             {
                 found_code = true;
                 cout<<" found_code = true "<< nMarker_info[i].id<<endl;
                 ARMarkerInfo  Mark_info = nMarker_info[i];
                 //double robot_theta = calcPan(Mark,orients_) ;
                 bool id_was_detected = false;
-                for(int ii = 0 ; ii < detectedID.size(); ii++)
+                for (int ii = 0 ; ii < detectedID.size(); ii++)
                 {
 /**
  ** 这用 landmark的记录，起始 id_was_detected 为未观测到，将id保存在detectedID中，在vector<vector()>中开辟新vector
@@ -358,7 +376,7 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
  **     出现在里面就放入之前开辟的vector中；
  **     未出现过就将id保存在detectedID中，在vector<vector()>中开辟新vector
 **/
-                    if(Mark_info.id == detectedID[ii])
+                    if (Mark_info.id == detectedID[ii])
                     {
                         id_was_detected = true;
                         ConerPoint  center,corner0,corner1,corner2,corner3 ;
@@ -374,7 +392,7 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
                         coners[ii].push_back(points_temp);
                     }
                 }
-                if(id_was_detected == false)   //主要是为了多阈值处理下（在循环 while(tryCount < 253)下只进来一次）先填充满ID_X容器，确定好detectedID的数量。
+                if (id_was_detected == false)   //主要是为了多阈值处理下（在循环 while(tryCount < 253)下只进来一次）先填充满ID_X容器，确定好detectedID的数量。
                 {                       // X_arr的填充顺序是nMarker_info[i]中i的顺序。。
                     detectedID.push_back(Mark_info.id);
 
@@ -395,11 +413,11 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
             }
         }
         cout<<" found_code = end "<<endl;
-        //mark有效区间结束
-    }
+    }//mark有效区间结束
+    fthreshold<<" "<< endl; // 二值化阈值
     cout<<"coners.size() "<< coners.size() <<endl;
     //average   将填充的vector< vector > 均值化  // vector< vector > 均值化 成 vector
-    for(int i = 0 ; i < coners.size(); i++)
+    for (int i = 0 ; i < coners.size(); i++)
     {
         CPointsFour  c_temp;
         c_temp =  averageCPointsFour(coners[i], 10.0,0.0,2.0,6420);
@@ -431,10 +449,10 @@ vector<CPointsFour> DetctQrcode::detectLandmarks(cv::Mat image, int &MarkNum)
 
 void DetctQrcode::drawQrcode(void)   //draw the square-qrcode_fourSide
 {
-    for(int count = 0 ; count < nNumMarkers; count++)
+    for (int count = 0 ; count < nNumMarkers; count++)
     {
         Mark_ = nMarker_info[count];
-        if(Mark_.id != -1 && ht_[Mark_.id] > 0.4 )
+        if (Mark_.id != -1 && ht_[Mark_.id] > 0.4 )
         {
             cv::line(show_landmark_img_,cv::Point(Mark_.vertex[0][0],Mark_.vertex[0][1]),cv::Point(Mark_.vertex[1][0],Mark_.vertex[1][1]),CV_RGB(255,0,0),1,8);
             cv::line(show_landmark_img_,cv::Point(Mark_.vertex[1][0],Mark_.vertex[1][1]),cv::Point(Mark_.vertex[2][0],Mark_.vertex[2][1]),CV_RGB(255,0,0),1,8);
@@ -496,15 +514,15 @@ void DetctQrcode::createMap( MapType &inputData, char * filename)
     while (std::getline(infile, line))
     {
         bool readFine = false;
-        if(line.size() > 0 && line[0] == '<' && line[line.size()-1] == '>' )
+        if (line.size() > 0 && line[0] == '<' && line[line.size()-1] == '>' )
         {
             std::size_t pSBE = line.find(startBraceEnd);
             std::size_t pEBS = line.find(endBraceStart);
-            if( pSBE!=std::string::npos && pEBS!=std::string::npos && pSBE < pEBS)
+            if ( pSBE!=std::string::npos && pEBS!=std::string::npos && pSBE < pEBS)
             {
                 std::string marker1 = line.substr(1,pSBE-1);
                 std::string marker2 = line.substr(pEBS+2,line.size()-pEBS-3);
-                if( marker1 == marker2 )
+                if ( marker1 == marker2 )
                 {
                     std::string content = line.substr(pSBE+1,pEBS-pSBE-1);
                     inputData.insert( pair<string, string>(marker1, content) );
@@ -512,7 +530,7 @@ void DetctQrcode::createMap( MapType &inputData, char * filename)
                 }
             }
         }
-        if( readFine == true )
+        if ( readFine == true )
         {
             cout<<line<<" READ FINE "<<endl;
         }
@@ -543,14 +561,14 @@ std::string DetctQrcode::arrToStr(const char * c, int i )
 void   DetctQrcode::gradientNormalizePic(cv::Mat &cutout)
 {
     double rowsDiff = 0;
-    for( int x = 0; x < cutout.cols; x++ )
+    for ( int x = 0; x < cutout.cols; x++ )
     {
         int diffCounter = 0;
         int diffAcc = 0;
-        for( int y = 1; y < cutout.rows; y++ )
+        for ( int y = 1; y < cutout.rows; y++ )
         {
             int diff = cutout.at<uchar>(y,x) - cutout.at<uchar>(y-1,x) ;
-            if( abs(diff) < 5 )
+            if ( abs(diff) < 5 )
             {
                 diffAcc += diff;
                 diffCounter++;
@@ -563,14 +581,14 @@ void   DetctQrcode::gradientNormalizePic(cv::Mat &cutout)
 
 
     double colsDiff = 0;
-    for( int y = 0; y < cutout.rows; y++ )
+    for ( int y = 0; y < cutout.rows; y++ )
     {
         int diffCounter = 0;
         int diffAcc = 0;
-        for( int x = 1; x < cutout.cols; x++ )
+        for ( int x = 1; x < cutout.cols; x++ )
         {
             int diff = cutout.at<uchar>(y,x) - cutout.at<uchar>(y,x-1) ;
-            if( abs(diff) < 5 )
+            if ( abs(diff) < 5 )
             {
                 diffAcc += diff;
                 diffCounter++;
@@ -583,10 +601,10 @@ void   DetctQrcode::gradientNormalizePic(cv::Mat &cutout)
     double startdr = rowsDiff * cutout.rows / 2.0 ;
     double startdc = colsDiff * cutout.cols / 2.0 ;
 
-    for( int x = 0; x < cutout.cols; x++ )
+    for ( int x = 0; x < cutout.cols; x++ )
     {
         double adjr = startdr;
-        for( int y = 0; y < cutout.rows; y++ )
+        for ( int y = 0; y < cutout.rows; y++ )
         {
             int newVal = ( (double) cutout.at<uchar>(y,x) ) + adjr;
             newVal = newVal >= 0  ? newVal : 0;
@@ -596,10 +614,10 @@ void   DetctQrcode::gradientNormalizePic(cv::Mat &cutout)
         }
     }
 
-    for( int y = 0; y < cutout.rows; y++ )
+    for ( int y = 0; y < cutout.rows; y++ )
     {
         double adjc = startdc;
-        for( int x = 1; x < cutout.cols; x++ )
+        for ( int x = 1; x < cutout.cols; x++ )
         {
             int newVal = ( (double) cutout.at<uchar>(y,x) ) + adjc;
             newVal = newVal >= 0  ? newVal : 0;
@@ -623,20 +641,20 @@ double DetctQrcode::getPan(double a1, double b1,double a2, double b2, int dirNum
     double pan = atan(-1.0 * a1 / b1 ) + 1.57079632679;
 
 
-    if(dirNum == 0 || dirNum == 1 )
+    if (dirNum == 0 || dirNum == 1 )
         pan = pan + 3.141592653589793;
 
-    if( (pan > 2.7 || pan < .4 )  && ( dirNum == 0 || dirNum == 3) )
+    if ( (pan > 2.7 || pan < .4 )  && ( dirNum == 0 || dirNum == 3) )
     {
         pan = atan(-1.0 * a2 / b2 );
     }
 
-    if( (pan > 2.7 || pan < .4 )  && ( dirNum == 1 || dirNum == 2) )
+    if ( (pan > 2.7 || pan < .4 )  && ( dirNum == 1 || dirNum == 2) )
     {
         pan = atan(-1.0 * a2 / b2 )+ 3.141592653589793;
     }
 
-    if(dirNum == 0 && pan < 1.58 && pan > .3)
+    if (dirNum == 0 && pan < 1.58 && pan > .3)
     {
         pan = -1.0 * pan;
     }
@@ -646,9 +664,9 @@ double DetctQrcode::getPan(double a1, double b1,double a2, double b2, int dirNum
 }
 double DetctQrcode::combinePan(double pan, double pan2)
 {
-    if(fabs(pan-pan2) > 5 )
+    if (fabs(pan-pan2) > 5 )
     {
-        if(pan > pan2)
+        if (pan > pan2)
         {
             pan2 = pan2 + 3.141592653589793 * 2.0;
         }
@@ -662,17 +680,17 @@ double DetctQrcode::combinePan(double pan, double pan2)
 }
 double DetctQrcode::normalizePan(double pan)
 {
-    if(pan < -3.141592653589793)
+    if (pan < -3.141592653589793)
         pan = pan + 3.141592653589793 * 2.0;
 
-    if(pan > 3.141592653589793)
+    if (pan > 3.141592653589793)
         pan = pan - 3.141592653589793 * 2.0;
 
     return pan;
 }
 double DetctQrcode::calcPan(ARMarkerInfo arcode /*nMarker_info*/,vector<int> orients)
 {
-    /*   for(int i=0;i<4;i++)
+    /*   for (int i=0;i<4;i++)
     {
        cout<<"------mark:"<<arcode.id<<"  arcode[line]a b:"<<arcode.line[i][0]<<"  "<<arcode.line[i][1]<< endl;
        cout<<"arcode.vertex x y:"<<arcode.vertex[i][0]<<"  "<<arcode.vertex[i][1]<< endl;
@@ -736,27 +754,27 @@ Direction that tells about the rotation about the marker (possible values are 0,
 This parameter makes it possible to tell about the line order of the detected marker
 (so which line is the first one) and so find the first vertex.
 */
-void   DetctQrcode::normalizeOrientation(ARMarkerInfo nMarker_info, vector<int> orients, int &dirNum,int &v1, int &v2, int &side)
+void   DetctQrcode::normalizeOrientation(ARMarkerInfo Marker_info, vector<int> orients, int &dirNum,int &v1, int &v2, int &side)
 {
-    dirNum = ( nMarker_info.dir - orients[ nMarker_info.id ] + 3) % 4;
+    dirNum = ( Marker_info.dir - orients[ Marker_info.id ] + 3) % 4;
 
     v1 = 0;
     v2 = 1;
     side = 0;
 
-    if(dirNum == 0)
+    if (dirNum == 0)
     {
         v1 = 0;
         v2 = 1;
         side = 2;
     }
-    else if(dirNum == 1)
+    else if (dirNum == 1)
     {
         v1 = 3;
         v2 = 0;
         side = 1;
     }
-    else if(dirNum == 2)
+    else if (dirNum == 2)
     {
         v1 = 2;
         v2 = 3;
@@ -775,10 +793,10 @@ double QRCodeLocalizer::avgMode(vector<double> data, double multiplier, double s
 {
 
     int buckets[bucketAmount];
-    for(int i = 0;i< bucketAmount;i++)
+    for (int i = 0;i< bucketAmount;i++)
         buckets[i]=0;
 
-    for(int i = 0 ; i < data.size();i++)
+    for (int i = 0 ; i < data.size();i++)
     {
         int index = data[i]*multiplier+shift;
         buckets[index] = buckets[index]+1;
@@ -786,9 +804,9 @@ double QRCodeLocalizer::avgMode(vector<double> data, double multiplier, double s
 
     int maxBucket = -1;
     int maxBucketIndex = 0;
-    for(int i = 0;i< bucketAmount;i++)
+    for (int i = 0;i< bucketAmount;i++)
     {
-        if( maxBucket < buckets[i] )
+        if ( maxBucket < buckets[i] )
         {
             maxBucket = buckets[i];
             maxBucketIndex = i;
@@ -797,7 +815,7 @@ double QRCodeLocalizer::avgMode(vector<double> data, double multiplier, double s
 
     int count = 0;
     double accum = 0.0;
-    for(int i = 0 ; i < data.size();i++)
+    for (int i = 0 ; i < data.size();i++)
     {
         if ( fabs ( ( (double) maxBucketIndex ) - ( data[i] * multiplier + shift ) ) < range )
         {
@@ -814,7 +832,7 @@ double DetctQrcode::averageVector(vector<double> data, double multiplier, double
 {
     int count = 0;
     double accum = 0.0;
-    for(int i = 0 ; i < data.size();i++)
+    for (int i = 0 ; i < data.size();i++)
     {
         count++;
         accum = accum + data[i];
@@ -827,7 +845,7 @@ double DetctQrcode::sideCalc(ARMarkerInfo Mark)
 {
     double ddAcc = 0.0;
     double xd,yd,dd;
-    for( int i = 0 ; i < 4 ; i++ )
+    for ( int i = 0 ; i < 4 ; i++ )
     {
         xd = Mark.vertex[i][0] - Mark.vertex[(i+1)%4][0];
         yd = Mark.vertex[i][1] - Mark.vertex[(i+1)%4][1];
@@ -959,7 +977,7 @@ CPointsFour DetctQrcode::averageCPointsFour(vector<CPointsFour> data, double mul
     int qr_id = -1;
     ConerPoint  center,corner0,corner1,corner2,corner3 ;
     center.init(0,0);corner0.init(0,0);corner1.init(0,0);corner2.init(0,0);corner3.init(0,0);
-    for(int i = 0 ; i < data.size();i++)
+    for (int i = 0 ; i < data.size();i++)
     {
         count++;
         //qr_id += data[i].ID;

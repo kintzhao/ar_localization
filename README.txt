@@ -25,8 +25,6 @@
      初始化定位
      ekfslam算法框架
 
-
-
   6 配置参数说明：
     高度=292cm-29cm=263-->2.62m
     相机校正有不同的结果出现
@@ -113,7 +111,7 @@
 
     13. 加入robot  显示以后，发现角度计算存在严重的积分误差累积
 
-
+    14  抗扰动判断：利用结算f 与测量f 对比。。-->评判标准
 
 This directory contains material supporting chapter 9 of the cookbook:  
 Computer Vision Programming using the OpenCV Library. 

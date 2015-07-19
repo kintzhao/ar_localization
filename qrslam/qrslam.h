@@ -24,6 +24,9 @@
 #include <sensor_msgs/image_encodings.h>
 #include "tf/LinearMath/Matrix3x3.h"
 #include "geometry_msgs/Quaternion.h"
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
+
+
 
 #include "simulator.h"  //  g2o相关的库
 
@@ -35,11 +38,12 @@
 #include "../image_convert/image_converter.h"
 
 #define undistort 0//1
-#define DATA_FUSION 10      //1   滑动均值窗口的大小
+#define DATA_FUSION 10          //    滑动均值窗口的大小
 
-#define OPEN_DATA_FILTER 1   //1  角速度打开数据滤波
-
-#define SELECT_LANDMARK_NUM 0   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
+#define OPEN_DATA_FILTER 1      //   角速度打开数据滤波
+#define OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
+#define OPEN_ROBOT_POSE_EKF_FILTER 1      //   robot_pose_ekf
+#define SELECT_LANDMARK_NUM 1   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
 
 
 
@@ -107,6 +111,8 @@ public :
     vector<int> Lm_observed_Num;
     int LandmarkSumNum;
 
+    int landmark_have_drawed;
+
     static const int MAP_BASE_Y_ = 150 ;
     //    static const int MAP_BASE_X_ = 500 ;
     static const int MAP_BASE_X_ = 100 ;
@@ -131,8 +137,11 @@ public :
     const float convar_y_ = 0.0;        //0.10;//0.1;//1;//100;//0.1;
     const float convar_theta_ = 0.0044;    //0.38;//0.1;//0.38;
 
-    const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };
+   const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
+    // const float convar_measure[4] = {1.9337,0,0,0.0040};
     //      const float convar_measure[4] ={ 3811.01352137816,126.695330400850,126.695330400850,4.76963060027493};
+    //      0.0000    0.0001      0.0001    0.0859    动态：  速度预测下
+    //      1.9337    0.0847    0.0847    0.0040      动态下： 线性拟合
 
     static const int INIT_LOCALIZATION = 20;// 初始定位缓存大小
     const int SELECT_MARK_FOR_INIT_ = 20; // 用作初始定位的landmark id .
@@ -185,6 +194,8 @@ public:
     ros::NodeHandle   ar_handle;
     ros::Publisher    observation_pub_;
     ros::Subscriber   odometer_sub_;
+    ros::Subscriber   odo_combined_sub_;
+
 
     image_transport::ImageTransport transport_;
     image_transport::Subscriber qr_image_sub_;
@@ -198,10 +209,13 @@ public:
     void  showImage() ;
     void  getNumQrcode(void);
     void  getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg);
+    void  robotPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg );
     void  qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg);
     int   qr_detect_init_num ;
     int   odom_init_num;
     int observed_mark_num_old ;
+
+    timeb test_time_old,test_time;
 
 //display
     ImageConverter* raw_img_cvt_ = NULL;
@@ -235,6 +249,7 @@ public:
     void  qrDetectDataStore( vector<CPointsFour> vector_data );
     bool  vectorIsValid(vector<CPointsFour> vector_data);
     void  dataFilter(double &v, double &w);
+    void bubbleSort(double unsorted[]);
 };
 
 #endif

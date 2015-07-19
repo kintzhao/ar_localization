@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include "./class/detectqrcode.h"
 #include "./qrslam.h"
-#define FIRST_ROBOT_POS_AS_ORIGIN  0 // 0 表示20 mark 为原点
+#define FIRST_ROBOT_POS_AS_ORIGIN  1 // 0 表示20 mark 为原点
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "qr_slam");

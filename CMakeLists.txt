@@ -69,6 +69,11 @@ file(GLOB SOURCES_AR
 
 #ADD_SUBDIRECTORY(tutorial_slam2d)
 
+add_executable(vel_pub ${AR_SOURCE_DIR}/qrslam/pub/velpub.cpp )
+target_link_libraries(vel_pub    ${catkin_LIBRARIES}  )
+
+
+
 ###########################g2o##################################################################
 
 ###########################g2o##################################################################

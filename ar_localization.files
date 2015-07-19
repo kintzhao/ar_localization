@@ -303,3 +303,4 @@ data_sources/data/camcalibrate.xml
 data_sources/data/no_distortion.cal
 data_sources/data/no_distortion_big.cal
 READ_ME_ros_calibration.txt
+qrslam/pub/velpub.cpp
