@@ -30,8 +30,8 @@ QrSlam::QrSlam(char* addr):transport_( ar_handle)
     is_img_update_  = false;
     data_filter_num = 0;
     landmark_have_drawed = 0;
-    Vodom[DATA_FUSION] = {};
-    Wodom[DATA_FUSION] = {};
+    Vodom[DATA_FUSION_NUM] = {};
+    Wodom[DATA_FUSION_NUM] = {};
 
     qr_detect_init_num = 0;
     odom_init_num = 0;
@@ -155,14 +155,14 @@ void QrSlam::getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg)
         mat.getEulerYPR(yaw, pitch, roll);
         cout << "----------" << yaw << "---------" << endl;
 
-//        robot_info_.X = msg->pose.pose.position.x*100 + coordinate_x_;
-//        robot_info_.Y = msg->pose.pose.position.y*100 + coordinate_y_;    // ****坐标系反转  逆转实际为负  测量为正
-//        //加上静止数据偏差  + 0.0089  -0.0084
-//        robot_info_.Theta = yaw + coordinate_angle_  ;
+        //        robot_info_.X = msg->pose.pose.position.x*100 + coordinate_x_;
+        //        robot_info_.Y = msg->pose.pose.position.y*100 + coordinate_y_;    // ****坐标系反转  逆转实际为负  测量为正
+        //        //加上静止数据偏差  + 0.0089  -0.0084
+        //        robot_info_.Theta = yaw + coordinate_angle_  ;
 
         robot_info_.V  = msg->twist.twist.linear.x*100;
         robot_info_.W  = msg->twist.twist.angular.z     ;   //****坐标系反转  逆转实际为负 测量为正  角速度积分计算要注意
-#if  OPEN_DATA_FILTER
+#if  IS_OPEN_DATA_FILTER
         dataFilter(robot_info_.V,robot_info_.W);
 #endif
         //        robot_info_.Theta += robot_info_.W*dt;
@@ -185,10 +185,10 @@ void QrSlam::dataFilter(double &v, double  &w)
 {
     Vodom[data_filter_num] = v;
     Wodom[data_filter_num]  = w;
-    data_filter_num = (data_filter_num+1) % DATA_FUSION;
+    data_filter_num = (data_filter_num+1) % DATA_FUSION_NUM;
     double total_w = 0;
     double total_v = 0;
-#if OPEN_BUBBLE_FILTER
+#if IS_OPEN_BUBBLE_FILTER
     bubbleSort(Vodom);
     bubbleSort(Wodom);
     for (int i=1; i<DATA_FUSION-1; ++i)
@@ -200,22 +200,22 @@ void QrSlam::dataFilter(double &v, double  &w)
     v = total_v / ( DATA_FUSION - 2);
     w = total_w / ( DATA_FUSION - 2);
 #else
-    for (int i=0; i<DATA_FUSION; ++i)
+    for (int i=0; i<DATA_FUSION_NUM; ++i)
     {
         // fTest << " " <<  Vodom[i]  << "  " << Wodom[i] << "  " <<  DATA_FUSION <<  " "  << endl;
         total_v += Vodom[i];
         total_w += Wodom[i];
     }
-    v = total_v / ( DATA_FUSION );
-    w = total_w / ( DATA_FUSION );
+    v = total_v / ( DATA_FUSION_NUM );
+    w = total_w / ( DATA_FUSION_NUM );
 #endif
 
 }
 void QrSlam::bubbleSort(double  unsorted[])
 {
-    for (int i = 0; i < DATA_FUSION; i++)
+    for (int i = 0; i < DATA_FUSION_NUM; i++)
     {
-        for (int j = i; j < DATA_FUSION; j++)
+        for (int j = i; j < DATA_FUSION_NUM; j++)
         {
             if (unsorted[i] > unsorted[j])
             {
@@ -565,17 +565,17 @@ void QrSlam::ekfSlam(float V, float W)
         Vt.at<float>(1,0) = (cos(last_miu_theta) - cos(last_miu_theta+Wd_ * delta_t_))/Wd_;
         Vt.at<float>(1,1) = -Vd_*(cos(last_miu_theta)-cos(last_miu_theta+Wd_ * delta_t_))/Wd_/Wd_+Vd_ * sin(last_miu_theta+Wd_ * delta_t_)*delta_t_/Wd_;
         Vt.at<float>(2,0) = 0;
-        Vt.at<float>(2,1)=delta_t_;
+        Vt.at<float>(2,1) = delta_t_;
 
         //计算Mt   motion noise ;  why add the motion noise   ?????
         //         Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
         //         Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
 
-//        //        Mt.at<float>(0,0) = a1;
-//        //        Mt.at<float>(0,1) = a2;
-//        //        Mt.at<float>(1,0) = a3;
-//        //        Mt.at<float>(1,1) = a4;
-//        Rt = Vt * Mt * Vt.t();//计算Rt
+        //        //        Mt.at<float>(0,0) = a1;
+        //        //        Mt.at<float>(0,1) = a2;
+        //        //        Mt.at<float>(1,0) = a3;
+        //        //        Mt.at<float>(1,1) = a4;
+        //        Rt = Vt * Mt * Vt.t();//计算Rt
 
         Rt.at<float>(0,0) = convar_x_;
         Rt.at<float>(1,1) = convar_y_;
@@ -690,12 +690,12 @@ void QrSlam::ekfSlam(float V, float W)
         miu_convar_p = x_convar_p_prediction;
         //×××
         ////××
-//                        miu_prediction  =  miu_prediction + Kt * delta_z;  // xPred_SLAM 关于landmark为极坐标值
-//                        angleWrap(miu_prediction.at<float>(2));
-//                        x_convar_p_prediction =  (I_SLAM - Kt * Ht) * x_convar_p_prediction;
-//                    }
-//                    miu_state = miu_prediction;
-//                    miu_convar_p = x_convar_p_prediction;
+        //                                miu_prediction  =  miu_prediction + Kt * delta_z;  // xPred_SLAM 关于landmark为极坐标值
+        //                                angleWrap(miu_prediction.at<float>(2));
+        //                                x_convar_p_prediction =  (I_SLAM - Kt * Ht) * x_convar_p_prediction;
+        //                            }
+        //                            miu_state = miu_prediction;
+        //                            miu_convar_p = x_convar_p_prediction;
         ////×
         ///
         Point3f xPred;
@@ -1087,7 +1087,7 @@ void QrSlam::showLandmark(cv::Mat& map, Scalar rgb)
     frobot  <<  " "   <<  miu_state.at<float>(0)  << " " <<  miu_state.at<float>(1)  <<  endl;
     int temp_X = miu_state.at<float>(0) + MAP_BASE_X_;
     int temp_Y = miu_state.at<float>(1) + MAP_BASE_Y_;
-    temp_Y = map.rows - temp_Y ;
+        temp_Y = map.rows - temp_Y ;
 
     // frobot << " " << temp_X << " " << temp_Y << endl;
     cv::circle(map,Point( temp_X,temp_Y),1,CV_RGB(0, 255,0),1); //绘制 robot

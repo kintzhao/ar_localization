@@ -38,12 +38,12 @@
 #include "../image_convert/image_converter.h"
 
 #define undistort 0//1
-#define DATA_FUSION 10          //    滑动均值窗口的大小
+#define DATA_FUSION_NUM 10          //    滑动均值窗口的大小
 
-#define OPEN_DATA_FILTER 0      //   角速度打开数据滤波
-#define OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
-#define OPEN_ROBOT_POSE_EKF_FILTER 1      //   robot_pose_ekf
-#define SELECT_LANDMARK_NUM 0   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
+#define IS_OPEN_DATA_FILTER 1      //   角速度打开数据滤波
+#define IS_OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
+#define IS_OPEN_ROBOT_POSE_EKF_FILTER 1      //   robot_pose_ekf
+#define SELECT_LANDMARK_NUM 1   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
 
 
 
@@ -142,6 +142,8 @@ public :
     const float convar_theta_ = 0.000685;    //0.38;//0.1;//0.38;
 
    const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
+//   const float convar_measure[4] = {10, 0, 0, 1.6933 };  //静态下
+//   const float convar_measure[4] = {10, 0, 0, 0.6933 };  //
 //   const float convar_measure[4] = {1.9337,0,0,0.0040};  //静态下
     // const float convar_measure[4] = {1.9337,0,0,0.0040};
     //      const float convar_measure[4] ={ 3811.01352137816,126.695330400850,126.695330400850,4.76963060027493};
@@ -185,8 +187,8 @@ public:
     int mark5_init_num;
 
 
-    double Vodom[DATA_FUSION];
-    double Wodom[DATA_FUSION];
+    double Vodom[DATA_FUSION_NUM];
+    double Wodom[DATA_FUSION_NUM];
     int    data_filter_num;
 
     int     odom_i;
@@ -205,7 +207,7 @@ public:
     image_transport::ImageTransport transport_;
     image_transport::Subscriber qr_image_sub_;
 
-    ros::Time         current_time_, last_time_;
+    ros::Time     current_time_, last_time_;
     DetctQrcode*  pQrDetect_;
 
     //public function
@@ -218,7 +220,7 @@ public:
     void  qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg);
     int   qr_detect_init_num ;
     int   odom_init_num;
-    int observed_mark_num_old ;
+    int   observed_mark_num_old ;
 
     timeb test_time_old,test_time;
 

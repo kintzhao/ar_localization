@@ -44,7 +44,7 @@ DetctQrcode::DetctQrcode(char * mapFile)
     fs2["Distortion_Coefficients"] >> distcoeffs_;        //畸变系数
     //相机焦距相关
     camInnerPara.fx = camera_matrix_.at<double>(0,0)/100.0; camInnerPara.fy = camera_matrix_.at<double>(1,1)/100.0;
-    camInnerPara.dx = camera_matrix_.at<double>(0,2)/100.0; camInnerPara.dy = camera_matrix_.at<double>(1,2)/100.0;
+    camInnerPara.dx = camera_matrix_.at<double>(0,2); camInnerPara.dy = camera_matrix_.at<double>(1,2);
     cv::initUndistortRectifyMap( camera_matrix_,distcoeffs_,cv::Mat(),
                                  cv::getOptimalNewCameraMatrix(camera_matrix_, distcoeffs_, cv::Size(img_W_,img_H_), 1, cv::Size(img_W_,img_H_), 0),
                                  cv::Size(img_W_,img_H_),CV_16SC2,map1_,map2_);
@@ -953,10 +953,12 @@ void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
  */
 void DetctQrcode::imTotruePos(double &width,double &height,int id)
 {
-    double centXoff = height -240;
-    double centYoff = 320 - width ;
+    double centXoff = height - camInnerPara.dy;
+    double centYoff = camInnerPara.dx - width ;          //采取内参校正数值
+//    double centXoff = height -240;
+//    double centYoff = 320 - width ;
     //double camInnerFocus =sqrt(camInnerPara.fx*camInnerPara.fx + camInnerPara.fy* camInnerPara.fy) ;
-    double x_cm  = centXoff * ht_[id] / camInnerPara.fy;//camInnerFocus;
+    double x_cm  = centXoff * ht_[id] / camInnerPara.fy; //camInnerFocus;
     double y_cm =  centYoff * ht_[id] / camInnerPara.fx; //camInnerFocus;
 
     width  = x_cm;
