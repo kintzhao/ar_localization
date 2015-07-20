@@ -21,6 +21,8 @@ ofstream fQrData("qr_data_recorder.txt");
 ofstream fOdom("odom.txt");
 ofstream fTest("test.txt");  //矩阵输出存放位置
 ofstream fVar("var.txt");  //矩阵输出存放位置
+ofstream fobsevation("observation.txt");  //矩阵输出存放位置
+
 
 QrSlam::QrSlam(char* addr):transport_( ar_handle)
 {
@@ -425,9 +427,9 @@ void QrSlam::ekfSlam(float V, float W)
         miu_state.at<float>(2) = robot_info_.Theta + coordinate_angle_ ;
 
         miu_convar_p =  Mat::zeros(3,3,CV_32FC1);    //这个可以放到初始化函数中去  ？？初值
-        miu_convar_p.at<float>(0,0) = convar_x_ ; // 0.1;//0.1;//1;//100;//0.1;
-        miu_convar_p.at<float>(1,1) = convar_y_ ; //0.10;//0.1;//1;//100;//0.1;
-        miu_convar_p.at<float>(2,2) = convar_theta_ ; //0.38;//0.1;//0.38;
+        miu_convar_p.at<float>(0,0) = p_init_x_ ; // 0.1;//0.1;//1;//100;//0.1;
+        miu_convar_p.at<float>(1,1) = p_init_y_ ; //0.10;//0.1;//1;//100;//0.1;
+        miu_convar_p.at<float>(2,2) = p_init_theta_ ; //0.38;//0.1;//0.38;
 
         init_EKF_value_ = false;
         TimeOld_ = Time_;
@@ -558,20 +560,26 @@ void QrSlam::ekfSlam(float V, float W)
         //        Gt=I_SLAM+Fx.t()*Gt_temp*Fx ;
 
         //计算Vt   Jacibi_u(v,w)
-        Vt.at<float>(0,0) = (-sin(last_miu_theta) + sin(last_miu_theta+Wd_ * delta_t_))/Wd_; Vt.at<float>(0,1)=Vd_*(sin(last_miu_theta)-sin(last_miu_theta+Wd_ * delta_t_))/Wd_/Wd_+Vd_ * cos(last_miu_theta+Wd_ * delta_t_)*delta_t_/Wd_;
-        Vt.at<float>(1,0) =  (cos(last_miu_theta) - cos(last_miu_theta+Wd_ * delta_t_))/Wd_; Vt.at<float>(1,1)=-Vd_*(cos(last_miu_theta)-cos(last_miu_theta+Wd_ * delta_t_))/Wd_/Wd_+Vd_ * sin(last_miu_theta+Wd_ * delta_t_)*delta_t_/Wd_;
-        Vt.at<float>(2,0) = 0;                          	                               Vt.at<float>(2,1)=delta_t_;
+        Vt.at<float>(0,0) = (-sin(last_miu_theta) + sin(last_miu_theta+Wd_ * delta_t_))/Wd_;
+        Vt.at<float>(0,1) = Vd_*(sin(last_miu_theta)-sin(last_miu_theta+Wd_ * delta_t_))/Wd_/Wd_+Vd_ * cos(last_miu_theta+Wd_ * delta_t_)*delta_t_/Wd_;
+        Vt.at<float>(1,0) = (cos(last_miu_theta) - cos(last_miu_theta+Wd_ * delta_t_))/Wd_;
+        Vt.at<float>(1,1) = -Vd_*(cos(last_miu_theta)-cos(last_miu_theta+Wd_ * delta_t_))/Wd_/Wd_+Vd_ * sin(last_miu_theta+Wd_ * delta_t_)*delta_t_/Wd_;
+        Vt.at<float>(2,0) = 0;
+        Vt.at<float>(2,1)=delta_t_;
 
         //计算Mt   motion noise ;  why add the motion noise   ?????
         //         Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
         //         Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
 
-        //        Mt.at<float>(0,0) = a1;
-        //        Mt.at<float>(0,1) = a2;
-        //        Mt.at<float>(1,0) = a3;
-        //        Mt.at<float>(1,1) = a4;
+//        //        Mt.at<float>(0,0) = a1;
+//        //        Mt.at<float>(0,1) = a2;
+//        //        Mt.at<float>(1,0) = a3;
+//        //        Mt.at<float>(1,1) = a4;
+//        Rt = Vt * Mt * Vt.t();//计算Rt
 
-        Rt = Vt * Mt * Vt.t();//计算Rt
+        Rt.at<float>(0,0) = convar_x_;
+        Rt.at<float>(1,1) = convar_y_;
+        Rt.at<float>(2,2) = convar_theta_;
 
         //计算预测方差矩阵miu_convar_p
         cout << "----------------------------------------" << endl;
@@ -682,12 +690,12 @@ void QrSlam::ekfSlam(float V, float W)
         miu_convar_p = x_convar_p_prediction;
         //×××
         ////××
-        //            miu_prediction  =  miu_prediction + Kt * delta_z;  // xPred_SLAM 关于landmark为极坐标值
-        //            angleWrap(miu_prediction.at<float>(2));
-        //            x_convar_p_prediction =  (I_SLAM - Kt * Ht) * x_convar_p_prediction;
-        //        }
-        //        miu_state = miu_prediction;
-        //        miu_convar_p = x_convar_p_prediction;
+//                        miu_prediction  =  miu_prediction + Kt * delta_z;  // xPred_SLAM 关于landmark为极坐标值
+//                        angleWrap(miu_prediction.at<float>(2));
+//                        x_convar_p_prediction =  (I_SLAM - Kt * Ht) * x_convar_p_prediction;
+//                    }
+//                    miu_state = miu_prediction;
+//                    miu_convar_p = x_convar_p_prediction;
         ////×
         ///
         Point3f xPred;
@@ -720,15 +728,15 @@ void QrSlam::genObservations()
         mark_temp = addObservationPos(landmark5_temp.center,landmark5_temp.ID) ;
         observations_.push_back(mark_temp); //landmark的index存储在Point3f的第三维中
 #else//五点式
-        mark_temp = addObservationPos(landmark5_temp.corn0,5*landmark5_temp.ID + 0) ;
+        mark_temp = addObservationPos(landmark5_temp.corn0, 5*landmark5_temp.ID + 0) ;
         observations_.push_back(mark_temp); //landmark的index存储在Point3f的第三维中
-        mark_temp = addObservationPos(landmark5_temp.corn1,5*landmark5_temp.ID + 1) ;
+        mark_temp = addObservationPos(landmark5_temp.corn1, 5*landmark5_temp.ID + 1) ;
         observations_.push_back(mark_temp); //landmark的index存储在Point3f的第三维中
-        mark_temp = addObservationPos(landmark5_temp.corn2,5*landmark5_temp.ID + 2) ;
+        mark_temp = addObservationPos(landmark5_temp.corn2, 5*landmark5_temp.ID + 2) ;
         observations_.push_back(mark_temp); //landmark的index存储在Point3f的第三维中
-        mark_temp = addObservationPos(landmark5_temp.corn3,5*landmark5_temp.ID + 3) ;
+        mark_temp = addObservationPos(landmark5_temp.corn3, 5*landmark5_temp.ID + 3) ;
         observations_.push_back(mark_temp); //landmark的index存储在Point3f的第三维中
-        mark_temp = addObservationPos(landmark5_temp.center,5*landmark5_temp.ID + 4) ;
+        mark_temp = addObservationPos(landmark5_temp.center, 5*landmark5_temp.ID + 4) ;
         observations_.push_back(mark_temp); //landmark的index存储在Point3f的第三维中
 #endif
     }
@@ -758,6 +766,7 @@ Point3ffi QrSlam::addObservationPos(ConerPoint landmarktemp ,int id )
     mark_temp.x = dst;
     mark_temp.y = theta;
     mark_temp.z = id;//temp value
+    fobsevation <<" "<<  mark_temp.z <<" "<< mark_temp.x <<" "<< mark_temp.y <<endl;
     //    if ( (id%5==4) && (id/5 ==19))
     //    {
     //        std::string text_id ="id: "+ int2str(id/5 );
@@ -964,6 +973,12 @@ void QrSlam::showRobotOrientation(Mat image, RobotInfo robot_info,Scalar rgb,int
     cv::putText(cv_camera_,text1,Point(50,200),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
     std::string text2 ="z: "+ float2str(robot_info.Theta*180/ 3.14159);
     cv::putText(cv_camera_,text2,Point(50,250),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+
+    std::string text3 ="v: "+ float2str(robot_info.V);
+    cv::putText(cv_camera_,text3,Point(50,300),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+    std::string text4 ="w: "+ float2str(robot_info.W);
+    cv::putText(cv_camera_,text4,Point(50,350),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(0,0,255));
+
 }
 
 void QrSlam::showRobotOrientation(Mat image, Mat robot_info,Scalar rgb,int x_coordinate,int y_coordinate)
@@ -1068,7 +1083,6 @@ void QrSlam::showRobotTriangle(cv::Mat& map, RobotInfo robot_info, Scalar rgb)
 void QrSlam::showLandmark(cv::Mat& map, Scalar rgb)
 {
     // cv::Mat map_copy ;
-    static bool first = false;
     cout  <<  miu_state.cols  <<  " "  <<  miu_state.rows  <<  endl;
     frobot  <<  " "   <<  miu_state.at<float>(0)  << " " <<  miu_state.at<float>(1)  <<  endl;
     int temp_X = miu_state.at<float>(0) + MAP_BASE_X_;
@@ -1088,13 +1102,22 @@ void QrSlam::showLandmark(cv::Mat& map, Scalar rgb)
 
 #if  SELECT_LANDMARK_NUM
         std::string text = int2str(observed_landmark_num.at(t));
-#else
-        std::string text = int2str(observed_landmark_num.at(t)/5);
-#endif
         if (t >= landmark_have_drawed)  //绘制第一次出现的landmark的 ID
         {
             cv::putText(map,text,Point(X,Y+20),CV_FONT_HERSHEY_COMPLEX, 1, CV_RGB(255, 0,0) );
         }
+
+#else
+        std::string text = int2str(observed_landmark_num.at(t)/5);
+        if (t >= landmark_have_drawed)  //绘制第一次出现的landmark的 ID
+        {
+            if (t%5 == 4)
+            {
+                cv::putText(map,text,Point(X,Y+20),CV_FONT_HERSHEY_COMPLEX, 1, CV_RGB(255, 0,0) );
+            }
+        }
+#endif
+
     }
     std::string  num_text = int2str(observed_landmark_num.size());
     cv::putText(cv_camera_,num_text,Point( 40,40),CV_FONT_HERSHEY_COMPLEX, 1, CV_RGB(0, 0,255) );

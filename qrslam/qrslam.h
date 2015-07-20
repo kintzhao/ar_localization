@@ -40,10 +40,10 @@
 #define undistort 0//1
 #define DATA_FUSION 10          //    滑动均值窗口的大小
 
-#define OPEN_DATA_FILTER 1      //   角速度打开数据滤波
+#define OPEN_DATA_FILTER 0      //   角速度打开数据滤波
 #define OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
 #define OPEN_ROBOT_POSE_EKF_FILTER 1      //   robot_pose_ekf
-#define SELECT_LANDMARK_NUM 1   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
+#define SELECT_LANDMARK_NUM 0   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
 
 
 
@@ -133,11 +133,16 @@ public :
     const float sigma_r = 0.1;
     const float sigma_phi = 0.1;   //观测模型噪声
 
-    const float convar_x_ = 0.0;        // 0.1;//0.1;//1;//100;//0.1;
-    const float convar_y_ = 0.0;        //0.10;//0.1;//1;//100;//0.1;
-    const float convar_theta_ = 0.0044;    //0.38;//0.1;//0.38;
+    const float p_init_x_ = 0.0001;        // 0.1;//0.1;//1;//100;//0.1;
+    const float p_init_y_ = 0.0001;        //0.10;//0.1;//1;//100;//0.1;
+    const float p_init_theta_ = 0.02618;    //0.38;//0.1;//0.38;
+
+    const float convar_x_ = 0.0005;        // 0.1;//0.1;//1;//100;//0.1;
+    const float convar_y_ = 0.0005;        //0.10;//0.1;//1;//100;//0.1;
+    const float convar_theta_ = 0.000685;    //0.38;//0.1;//0.38;
 
    const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
+//   const float convar_measure[4] = {1.9337,0,0,0.0040};  //静态下
     // const float convar_measure[4] = {1.9337,0,0,0.0040};
     //      const float convar_measure[4] ={ 3811.01352137816,126.695330400850,126.695330400850,4.76963060027493};
     //      0.0000    0.0001      0.0001    0.0859    动态：  速度预测下
