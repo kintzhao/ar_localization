@@ -44,8 +44,8 @@
 #define IS_OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
 #define IS_OPEN_ROBOT_POSE_EKF_FILTER 1      //   robot_pose_ekf
 #define SELECT_LANDMARK_NUM 1   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
-
-
+#define IS_OPEN_DYNAMIC_MAP 0   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的整个过程
+#define DISPLAY_UNDER_MARK_COORDINATE 1   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的显示landmark整个过程
 
 using ARToolKitPlus::TrackerSingleMarker;
 using ARToolKitPlus::ARMarkerInfo;
@@ -101,6 +101,7 @@ public :
     vector<Point2f> velocities_;          //For velocity model,用来保存直线和角输入,其保存的第一个元素为零，第二个元素代表从第一个位置与第二个位置之间的速度，以此类推
     vector<Point3ffi> observations_;
     vector<Point3f> est_path_points_;       //估计所得路点
+    vector< vector<Point2f> > landmarks_system_;       //估计所得路点
     Mat xP; 		                     //当前时刻所估计得到的机器人位姿协方差矩阵
 
     ///////////////////////EKFSLAM变量
@@ -180,6 +181,7 @@ public :
 
 public:
     RobotInfo robot_info_;
+
     vector<QrLandMark> landmark_vector_;
     vector<CPointsFour> landmark5_vector_;
     vector<CPointsFour> mark5_init_vector_;
@@ -237,7 +239,8 @@ public:
     void showRobot(Mat &map, RobotInfo robot_info, Scalar rgb);
     void showRobotOrientation(Mat image, RobotInfo robot_info, Scalar rgb, int x_coordinate, int y_coordinate);
     void showRobotOrientation(Mat image, Mat robot_info,Scalar rgb,int x_coordinate,int y_coordinate);
-    void showLandmark(Mat &map, Scalar rgb);
+    void showSystemStateLandmark(Mat &map, Scalar rgb);
+    void showSystemStateRobot(cv::Mat& map, Scalar rgb);
     void drawCoordinate(cv::Mat& mat);
     void storeData(void );
     bool is_odom_update ;
@@ -257,6 +260,11 @@ public:
     bool  vectorIsValid(vector<CPointsFour> vector_data);
     void  dataFilter(double &v, double &w);
     void bubbleSort(double unsorted[]);
+    void storeSystemState( Mat systemState);
+    void WorldToMark3(Point3f &dst, Point3f src);
+    void WorldToMark3(Point3d &dst, Point3d src);
+    void WorldToMark2(Point3f &dst, Point3f src);
+    void WorldToMark2(Point3d &dst, Point3d src);
 };
 
 #endif
