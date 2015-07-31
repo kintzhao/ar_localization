@@ -24,6 +24,8 @@ ofstream fVar("var.txt");  //矩阵输出存放位置
 ofstream fobsevation("observation.txt");  //矩阵输出存放位置
 ofstream fnewlandmark("newlandmark.txt");  //矩阵输出存放位置
 ofstream fcoordinate_init("coordinate_init.txt");
+
+ofstream ftimeStamp("time.txt");
 QrSlam::QrSlam(char* addr):transport_( ar_handle)
 {
     is_odom_update = false;
@@ -44,8 +46,9 @@ QrSlam::QrSlam(char* addr):transport_( ar_handle)
 
     current_time_ = ros::Time::now();
     last_time_ = ros::Time::now();
-
-    odo_combined_sub_  = ar_handle.subscribe("/robot_pose_ekf/odom_combined",10, &QrSlam::robotPoseCallback,this);
+#if IS_OPEN_ROBOT_POSE_EKF_FILTER
+     odo_combined_sub_  = ar_handle.subscribe("/robot_pose_ekf/odom_combined",10, &QrSlam::robotPoseCallback,this);
+#endif
     odometer_sub_  = ar_handle.subscribe("/odom",10, &QrSlam::getOdomterCallback,this);
 
     qr_image_sub_  = transport_.subscribe("/usb_cam/image_raw",10, &QrSlam::qrDetectCallback,this );
@@ -188,6 +191,7 @@ void QrSlam::WorldToMark2(Point3d &dst, Point3d src)
  */
 void QrSlam::getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
+    ftimeStamp<<"odom :  1   "<< msg->header.stamp << endl;
     if (init_state_)
     {
         odom_init_++;
@@ -207,13 +211,15 @@ void QrSlam::getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg)
         mat.getEulerYPR(yaw, pitch, roll);
         cout << "----------" << yaw << "---------" << endl;
 
-        //        robot_info_.X = msg->pose.pose.position.x*100 - coordinate_x_;
-        //        robot_info_.Y = msg->pose.pose.position.y*100 - coordinate_y_;    // ****坐标系反转  逆转实际为负  测量为正
-        //        //加上静止数据偏差  + 0.0089  -0.0084
-        //        robot_info_.Theta = yaw - coordinate_angle_  ;
-
+#if !IS_OPEN_ROBOT_POSE_EKF_FILTER
+        robot_info_.X = msg->pose.pose.position.x*100;
+        robot_info_.Y = msg->pose.pose.position.y*100;    // ****坐标系反转  逆转实际为负  测量为正
+        //加上静止数据偏差  + 0.0089  -0.0084
+        robot_info_.Theta = yaw;
+#endif
         robot_info_.V  = msg->twist.twist.linear.x * 100;
         robot_info_.W  = msg->twist.twist.angular.z     ;   //****坐标系反转  逆转实际为负 测量为正  角速度积分计算要注意
+
 #if  IS_OPEN_DATA_FILTER
         dataFilter(robot_info_.V,robot_info_.W);
 #endif
@@ -295,6 +301,7 @@ void QrSlam::qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg)
     cv_ptr = cv_bridge::toCvCopy(img_msg,sensor_msgs::image_encodings::BGR8);
     cv_ptr->image.copyTo(cv_camera_);
     // cv::flip(cv_camera_,cv_camera_,-1);       //display has flip with x
+    ftimeStamp<<"image:   2   "<< img_msg->header.stamp << endl;
 
     landmark5_vector_.clear();
     qr_detect_init_num++;
@@ -620,14 +627,15 @@ void QrSlam::ekfSlam(float V, float W)
         Vt.at<float>(2,1) = delta_t_;
 
         //计算Mt   motion noise ;  why add the motion noise   ?????
-        //         Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
-        //         Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
+//        Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
+//        Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
 
         //        //        Mt.at<float>(0,0) = a1;
         //        //        Mt.at<float>(0,1) = a2;
         //        //        Mt.at<float>(1,0) = a3;
         //        //        Mt.at<float>(1,1) = a4;
-        //        Rt = Vt * Mt * Vt.t();//计算Rt
+//        Rt = Vt * Mt * Vt.t();//计算Rt
+
 
 //        Rt.at<float>(0,0) = convar_x_;
 //        Rt.at<float>(1,1) = convar_y_;

@@ -40,10 +40,10 @@
 #define undistort 0//1
 #define DATA_FUSION_NUM 10          //    滑动均值窗口的大小
 
-#define IS_OPEN_DATA_FILTER 1      //   角速度打开数据滤波
+#define IS_OPEN_DATA_FILTER 0      //   角速度打开数据滤波
 #define IS_OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
-#define IS_OPEN_ROBOT_POSE_EKF_FILTER 1      //   robot_pose_ekf
-#define SELECT_LANDMARK_NUM 1   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
+#define IS_OPEN_ROBOT_POSE_EKF_FILTER 0      //   robot_pose_ekf
+#define SELECT_LANDMARK_NUM 0   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
 #define IS_OPEN_DYNAMIC_MAP 0   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的整个过程
 #define DISPLAY_UNDER_MARK_COORDINATE 1   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的显示landmark整个过程
 
@@ -123,7 +123,7 @@ public :
 //    const float a3 = 0.1203;//0.1;
 //    const float a4 = -0.0037;//0.1;
 
-    const float a1 = 0.1583;//0.1;
+    const float a1 = 0.5;//0.1;
     const float a2 = 0.0032;//0.1;
     const float a3 = 0.0032;//0.1;
     const float a4 = 0.0016;//0.1;

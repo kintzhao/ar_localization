@@ -113,6 +113,27 @@
 
     14  抗扰动判断：利用结算f 与测量f 对比。。-->评判标准
 
+    15  讨论时间戳,数据的一致性
+        1)  GMAPPING if(!got_map_ || (scan->header.stamp - last_map_update) > map_update_interval_)
+        2)  地图是否更新的判断
+        if(!got_map_ || (scan->header.stamp - last_map_update) > map_update_interval_)
+        {
+          updateMap(*scan);                                                              //zyh    地图更新
+          last_map_update = scan->header.stamp;
+          ROS_DEBUG("Updated the map");
+        }
+
+    16  odom校准
+
+
+
+
+
+
+
+
+
+
 This directory contains material supporting chapter 9 of the cookbook:  
 Computer Vision Programming using the OpenCV Library. 
 by Robert Laganiere, Packt Publishing, 2011.
