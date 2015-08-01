@@ -47,7 +47,7 @@ QrSlam::QrSlam(char* addr):transport_( ar_handle)
     current_time_ = ros::Time::now();
     last_time_ = ros::Time::now();
 #if IS_OPEN_ROBOT_POSE_EKF_FILTER
-     odo_combined_sub_  = ar_handle.subscribe("/robot_pose_ekf/odom_combined",10, &QrSlam::robotPoseCallback,this);
+    odo_combined_sub_  = ar_handle.subscribe("/robot_pose_ekf/odom_combined",10, &QrSlam::robotPoseCallback,this);
 #endif
     odometer_sub_  = ar_handle.subscribe("/odom",10, &QrSlam::getOdomterCallback,this);
 
@@ -123,25 +123,25 @@ QrSlam::~QrSlam()
  */
 void QrSlam::robotPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg )
 {
-//    Point3d robot_pose_src, robot_pose_dst;
-//    robot_pose_src.x = msg->pose.pose.position.x * 100;
-//    robot_pose_src.y = msg->pose.pose.position.y * 100;     // ****坐标系反转  逆转实际为负  测量为正
-//    robot_pose_src.z = msg->pose.pose.orientation.z;
+    //    Point3d robot_pose_src, robot_pose_dst;
+    //    robot_pose_src.x = msg->pose.pose.position.x * 100;
+    //    robot_pose_src.y = msg->pose.pose.position.y * 100;     // ****坐标系反转  逆转实际为负  测量为正
+    //    robot_pose_src.z = msg->pose.pose.orientation.z;
 
     robot_info_.X = msg->pose.pose.position.x * 100;
     robot_info_.Y = msg->pose.pose.position.y * 100;     // ****坐标系反转  逆转实际为负  测量为正
     robot_info_.Theta = msg->pose.pose.orientation.z;
 
-//#if DISPLAY_UNDER_MARK_COORDINATE
-//    WorldToMark3(robot_pose_dst,robot_pose_src);
-//    robot_info_.X = robot_pose_dst.x;
-//    robot_info_.Y = robot_pose_dst.y;
-//    robot_info_.Theta = robot_pose_dst.z;
-//#else
-//    robot_info_.X = robot_pose_src.x;
-//    robot_info_.Y = robot_pose_src.y;
-//    robot_info_.Theta = robot_pose_src.z;
-//#endif
+    //#if DISPLAY_UNDER_MARK_COORDINATE
+    //    WorldToMark3(robot_pose_dst,robot_pose_src);
+    //    robot_info_.X = robot_pose_dst.x;
+    //    robot_info_.Y = robot_pose_dst.y;
+    //    robot_info_.Theta = robot_pose_dst.z;
+    //#else
+    //    robot_info_.X = robot_pose_src.x;
+    //    robot_info_.Y = robot_pose_src.y;
+    //    robot_info_.Theta = robot_pose_src.z;
+    //#endif
 
 }
 
@@ -153,16 +153,16 @@ void QrSlam::robotPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::C
  */
 void QrSlam::WorldToMark3(Point3f &dst, Point3f src)
 {
-   dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
-   dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
-   dst.z =  src.z - coordinate_angle_;
+    dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
+    dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
+    dst.z =  src.z - coordinate_angle_;
 }
 
 void QrSlam::WorldToMark3(Point3d &dst, Point3d src)
 {
-  dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
-  dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
-  dst.z =  src.z - coordinate_angle_;
+    dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
+    dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
+    dst.z =  src.z - coordinate_angle_;
 }
 /**
  * @brief QrSlam::WorldToMark2
@@ -172,13 +172,13 @@ void QrSlam::WorldToMark3(Point3d &dst, Point3d src)
  */
 void QrSlam::WorldToMark2(Point3f &dst, Point3f src)
 {
-   dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
-   dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
+    dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
+    dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
 }
 void QrSlam::WorldToMark2(Point3d &dst, Point3d src)
 {
-   dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
-   dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
+    dst.x =  cos(coordinate_angle_) * src.x + sin(coordinate_angle_) * src.y - coordinate_x_;
+    dst.y = -sin(coordinate_angle_) * src.x + cos(coordinate_angle_) * src.y - coordinate_y_;
 }
 
 /****  里程处理回调函数
@@ -191,6 +191,7 @@ void QrSlam::WorldToMark2(Point3d &dst, Point3d src)
  */
 void QrSlam::getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
+    odom_stamp = msg->header.stamp;
     ftimeStamp<<"odom :  1   "<< msg->header.stamp << endl;
     if (init_state_)
     {
@@ -297,6 +298,7 @@ void QrSlam::bubbleSort(double  unsorted[])
  */
 void QrSlam::qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg)
 {
+    image_stamp = img_msg->header.stamp;
     cv_bridge::CvImagePtr  cv_ptr;
     cv_ptr = cv_bridge::toCvCopy(img_msg,sensor_msgs::image_encodings::BGR8);
     cv_ptr->image.copyTo(cv_camera_);
@@ -439,18 +441,18 @@ Point3f QrSlam::diffCoordinate(CPointsFour mark_2d,CPointsFourWorld mark_2d_worl
     Point3f coordinate_data;
     float d_x ,d_y,d_theta ;
     d_x = 1.0* (   (mark_2d.corn0.X - mark_2d_world.corn0.X) +(mark_2d.corn1.X - mark_2d_world.corn1.X)
-                    +(mark_2d.corn2.X - mark_2d_world.corn2.X) +(mark_2d.corn3.X - mark_2d_world.corn3.X)
-                    +(mark_2d.center.X - mark_2d_world.center.X)
-                    )/5 ;
+                   +(mark_2d.corn2.X - mark_2d_world.corn2.X) +(mark_2d.corn3.X - mark_2d_world.corn3.X)
+                   +(mark_2d.center.X - mark_2d_world.center.X)
+                   )/5 ;
 
     d_y = 1.0* (   (mark_2d.corn0.Y - mark_2d_world.corn0.Y) +(mark_2d.corn1.Y - mark_2d_world.corn1.Y)
-                    +(mark_2d.corn2.Y - mark_2d_world.corn2.Y) +(mark_2d.corn3.Y - mark_2d_world.corn3.Y)
-                    +(mark_2d.center.Y - mark_2d_world.center.Y)
-                    )/5 ;
+                   +(mark_2d.corn2.Y - mark_2d_world.corn2.Y) +(mark_2d.corn3.Y - mark_2d_world.corn3.Y)
+                   +(mark_2d.center.Y - mark_2d_world.center.Y)
+                   )/5 ;
 
     d_theta = 1.0*(  atan2(  (mark_2d.corn3.Y - mark_2d.corn0.Y ),(mark_2d.corn3.X - mark_2d.corn0.X ))
-                      +atan2( (mark_2d.corn2.Y - mark_2d.corn1.Y ),(mark_2d.corn2.X - mark_2d.corn1.X ))
-                      )/2;
+                     +atan2( (mark_2d.corn2.Y - mark_2d.corn1.Y ),(mark_2d.corn2.X - mark_2d.corn1.X ))
+                     )/2;
 
     coordinate_data.x = d_x;
     coordinate_data.y = d_y;
@@ -473,7 +475,7 @@ Point3f QrSlam::diffCoordinate(CPointsFour mark_2d,CPointsFourWorld mark_2d_worl
  *     2. observed_mark_num    观测到landmark总数量（n）    observed_mark_num_old   landmark已有储存量 -->状态扩维
  *     3.
  */
-void QrSlam::ekfSlam(float V, float W)
+void QrSlam::ekfSlam_old(float V, float W)
 {
     cout << "ekfslam start !" << endl;
     if (init_EKF_value_)
@@ -501,49 +503,19 @@ void QrSlam::ekfSlam(float V, float W)
         /////----------------------------------------------------------------------------------------------------------
         // landmark_vector_ = pQrDetect_->QrCodeMapping(visual_mark_num_,robot_pose); //获取的观测值是实际物理距离值
         cout << "observation start !" << endl;
-        genObservations();
-        getNumQrcode();
+        //判断后再提取观测值.
+        if( is_img_update_  )
+        {
+            genObservations();
+            getNumQrcode();
+        }
+
         /////----------------------------------------------------------------------------------------------------------
         int observed_mark_num = observed_landmark_num.size();
         cout << "----------------" << observed_mark_num_old << endl;
-        if (observed_mark_num > observed_mark_num_old)     //状态miu_SLAM 扩维 一个码两个量（x,y）加入系统状态   ？？？加入 mark(r,seita) 坐标值  扩维与加数。
+        if( !stateExtended(observed_mark_num,observed_mark_num_old) ) //系统状态扩维与协方差扩维
         {
-            //miu_SLAM扩维       后面将其改造成成员函数
-            cv::Mat miu_state_new = Mat::zeros(3+2*observed_mark_num,1,CV_32FC1);   //已去掉跟s有关的项，
-            for (int i = 0; i< 3 + 2*observed_mark_num_old; i++)
-            {
-                miu_state_new.at<float>(i) = miu_state.at<float>(i);
-            }
-            miu_state = Mat::zeros(3 + 2*observed_mark_num,1,CV_32FC1);   //已去掉跟s有关的项，原来是3+3*
-            for (int i = 0; i<3 + 2*observed_mark_num_old; i++)
-            {
-                miu_state.at<float>(i) = miu_state_new.at<float>(i);
-            }
-            displayMatrix(miu_state);
-            //  xP_SLAM 扩维
-            cv::Mat miu_convar_p_new =  Mat::zeros(3 + 2*observed_mark_num, 3 + 2*observed_mark_num, CV_32FC1);  //这个可以放到初始化函数中去  ？？初值???
-            displayMatrix(miu_convar_p_new);
-            displayMatrix(miu_convar_p);
-
-            for (int i = 0; i < 3 + 2*observed_mark_num_old; i++)
-            {
-                for (int j = 0;j < 3 + 2*observed_mark_num_old; j++)
-                {
-                    miu_convar_p_new.at<float>(i,j) = miu_convar_p.at<float>(i,j);
-                }
-            }
-
-            miu_convar_p = Mat::zeros(3 + 2*observed_mark_num, 3 + 2*observed_mark_num,CV_32FC1);   //已去掉跟s有关的项，原来是3+3*
-            for (int i = 0; i < 3 + 2*observed_mark_num_old; i++)
-            {
-                for (int j = 0; j < 3 + 2*observed_mark_num_old; j++)
-                    miu_convar_p.at<float>(i,j) = miu_convar_p_new.at<float>(i,j);
-            }
-
-            for (int i= 3 + 2*observed_mark_num_old; i < 3 + 2*observed_mark_num;i++)
-            {
-                miu_convar_p.at<float>(i,i) = 1000000;   //对角方差要大1000000
-            }
+            exit(0);
         }
         observed_mark_num_old = observed_mark_num;
         // xPred_SLAM 与 xPPred_SLAM 传入值的问题
@@ -554,6 +526,7 @@ void QrSlam::ekfSlam(float V, float W)
         Mat I_SLAM = Mat::eye(3 + 2*observed_mark_num, 3+2*observed_mark_num, CV_32FC1); //算法中的单位矩阵
         Mat Gt = Mat::zeros(3 + 2*observed_mark_num, 3+2*observed_mark_num, CV_32FC1);
         Mat Gt_temp = Mat::zeros(3, 3, CV_32FC1); //用来计算Gt的3*3矩阵
+
         Mat Ht = Mat::zeros(2, 3 + 2*observed_mark_num, CV_32FC1);
         Mat Kt = Mat::zeros(3 + 2*observed_mark_num, 2, CV_32FC1); //
 
@@ -573,8 +546,7 @@ void QrSlam::ekfSlam(float V, float W)
         Mat Mt = Mat::zeros(2,2,CV_32FC1);
 
         landmark_miu_conver_p_ = Mat::zeros(2,2,CV_64FC1); //协方差椭圆有关
-        ////////////////////////////////////////////////////////////////////////////////////
-        //     motionModelIndex==0 //Velocity模式
+        //motionModelIndex==0 //Velocity模式
         velocities_.push_back(Point2f(V,W));
         Point2f VEL = velocities_.at(velocities_.size()-2);  //数组从0开始  又存入一值
 
@@ -627,19 +599,18 @@ void QrSlam::ekfSlam(float V, float W)
         Vt.at<float>(2,1) = delta_t_;
 
         //计算Mt   motion noise ;  why add the motion noise   ?????
-//        Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
-//        Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
+        //        Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
+        //        Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
 
         //        //        Mt.at<float>(0,0) = a1;
         //        //        Mt.at<float>(0,1) = a2;
         //        //        Mt.at<float>(1,0) = a3;
         //        //        Mt.at<float>(1,1) = a4;
-//        Rt = Vt * Mt * Vt.t();//计算Rt
+        //        Rt = Vt * Mt * Vt.t();//计算Rt
 
-
-//        Rt.at<float>(0,0) = convar_x_;
-//        Rt.at<float>(1,1) = convar_y_;
-//        Rt.at<float>(2,2) = convar_theta_;
+        //        Rt.at<float>(0,0) = convar_x_;
+        //        Rt.at<float>(1,1) = convar_y_;
+        //        Rt.at<float>(2,2) = convar_theta_;
 
         //计算预测方差矩阵miu_convar_p
         cout << "----------------------------------------" << endl;
@@ -647,23 +618,17 @@ void QrSlam::ekfSlam(float V, float W)
         x_convar_p_prediction = Gt * miu_convar_p * Gt.t() + Fx.t() * Rt * Fx; //计算预测方差 Px  ??????????  xP_SLAM  与 xPred_SLAM
 
         // writeMatrix(Fx.t() * Rt * Fx);
+
         //计算Qt
         //        Qt.at<float>(0,0) = sigma_r * sigma_r;
         //        Qt.at<float>(1,1) = sigma_phi * sigma_phi;
-
         Qt.at<float>(0,0) = convar_measure[0];
         //  Qt.at<float>(0,1) = convar_measure[1];
         //  Qt.at<float>(1,0) = convar_measure[2];
         Qt.at<float>(1,1) = convar_measure[3];
 
         /////----------------------------------------------------------------------------------------------------------
-        //    LandmarkVector = pLocalizer->QrCodeMapping(MarkVisualNum);
-        //    GenObservations();
-
-        ///？？观测后面要改成 x y 坐标系
-        //    /////----------------------------------------------------------------------------------------------------------
-        /////----------------------------------------------------------------------------------------------------------
-        //更新
+        ///////更新----------------------------update------------------------------------------------------------------
         int   j = 0;  // the order of Qrmark  表示观察到的 特征标记      与状态量中landmark有关
         int   Qid = 0; //  the Id of Qrmark
         int   observed_flag = 0 ;//是否观察到过的标志  0表示从未出现过
@@ -673,6 +638,7 @@ void QrSlam::ekfSlam(float V, float W)
         Point2f delta;
         Point2f z,zp;
         Mat delta_z;
+
         for (int i=0; i< observations_.size(); i++)
         {
             Qid = observations_.at(i).z;
@@ -745,21 +711,12 @@ void QrSlam::ekfSlam(float V, float W)
             miu_temp_sum = miu_temp_sum + Kt * delta_z ;
             Kt_i_Ht_sum = Kt_i_Ht_sum + Kt * Ht;
         }
+
         miu_prediction = miu_prediction + miu_temp_sum ;  // xPred_SLAM 关于landmark为极坐标值
         angleWrap(miu_prediction.at<float>(2));
         x_convar_p_prediction = (I_SLAM-Kt_i_Ht_sum) * x_convar_p_prediction;
         miu_state = miu_prediction;
         miu_convar_p = x_convar_p_prediction;
-        //×××
-        ////××
-        //                                miu_prediction  =  miu_prediction + Kt * delta_z;  // xPred_SLAM 关于landmark为极坐标值
-        //                                angleWrap(miu_prediction.at<float>(2));
-        //                                x_convar_p_prediction =  (I_SLAM - Kt * Ht) * x_convar_p_prediction;
-        //                            }
-        //                            miu_state = miu_prediction;
-        //                            miu_convar_p = x_convar_p_prediction;
-        ////×
-        ///
         miu_convar_p =  0.5*(miu_convar_p + miu_convar_p.t());
         //    xP_SLAM(Rect(0,0,3,3)).copyTo(xP);   //分离出位置的协方差，用于图形显示不确定椭圆
         //draw_mark();
@@ -767,8 +724,111 @@ void QrSlam::ekfSlam(float V, float W)
         cout  << " " << endl;
         TimeOld_ = Time_;
     }
-   storeSystemState(miu_state);
+    storeSystemState(miu_state);
 }
+
+void QrSlam::ekfSlam(float V,float W)
+{
+    cout << "ekfslam start !" << endl;
+    if (init_EKF_value_)
+    {
+        cout << " init system variables !" << endl;
+        ftime(&Time_);
+        miu_state = Mat::zeros(3,1,CV_32FC1);       //已去掉跟s有关的项，原来是3+3*
+
+        miu_state.at<float>(0) = robot_info_.X ;//- coordinate_x_;
+        miu_state.at<float>(1) = robot_info_.Y ;//- coordinate_y_;      //  取y  标准正向
+        miu_state.at<float>(2) = robot_info_.Theta;// - coordinate_angle_ ;
+
+        miu_convar_p =  Mat::zeros(3,3,CV_32FC1);    //这个可以放到初始化函数中去  ？？初值
+        miu_convar_p.at<float>(0,0) = p_init_x_ ; // 0.1;//0.1;//1;//100;//0.1;
+        miu_convar_p.at<float>(1,1) = p_init_y_ ; //0.10;//0.1;//1;//100;//0.1;
+        miu_convar_p.at<float>(2,2) = p_init_theta_ ; //0.38;//0.1;//0.38;
+
+        init_EKF_value_ = false;
+        TimeOld_ = Time_;
+        velocities_.push_back(Point2f(V,W));
+    }
+    else
+    {
+        ftime(&Time_);
+        delta_t_ = (Time_.time - TimeOld_.time) + (Time_.millitm - TimeOld_.millitm)/1000.0; //  秒
+        /////----------------------------------------------------------------------------------------------------------
+        int variable_num = miu_state.rows;
+        cout << " motion predict" << endl;
+        Point2f robot_increase = motionModel(Point2f(V,W), miu_state, miu_convar_p, variable_num, delta_t_);
+        cout << "observation start !" << endl;
+        if( is_img_update_ && (robot_increase.x >= update_odom_linear )&& (robot_increase.y >= update_odom_angle ))
+        {
+            cout << " get observation" << endl;
+            genObservations();
+            int observed_mark_num = getNumQrcode();
+            cout << "--observed_mark_num_old--" << observed_mark_num_old << "--observed_mark_num----" << observed_mark_num << endl;
+            if( !stateExtended(observed_mark_num, observed_mark_num_old) ) //系统状态扩维与协方差扩维
+            {
+                exit(0);
+            }
+            observed_mark_num_old = observed_mark_num;
+            cout << " system update" << endl;
+            updateSystemState(miu_state, miu_convar_p, 2*observed_mark_num+3, observations_);
+        }
+        TimeOld_ = Time_;
+    }
+    storeSystemState(miu_state);
+}
+/**
+ * @brief QrSlam::stateExtended
+ * 状态miu_SLAM 扩维 一个码两个量（x,y）加入系统状态   系统状态从(num_old,1)扩展到(num,1);协方差从num_old方阵扩到num方阵
+ * @param num
+ * @param num_old
+ * @return
+ */
+bool QrSlam::stateExtended(int num, int num_old)
+{
+    if(num < num_old)
+        return false;
+    else if (num == num_old)
+        return true;
+    else
+    {
+        //miu_SLAM扩维       后面将其改造成成员函数
+        cv::Mat miu_state_new = Mat::zeros(3+2*num,1,CV_32FC1);   //已去掉跟s有关的项，
+        for (int i = 0; i< 3 + 2*num_old; i++)
+        {
+            miu_state_new.at<float>(i) = miu_state.at<float>(i);
+        }
+        miu_state = Mat::zeros(3 + 2*num,1,CV_32FC1);   //已去掉跟s有关的项，原来是3+3*
+        for (int i = 0; i<3 + 2*num_old; i++)
+        {
+            miu_state.at<float>(i) = miu_state_new.at<float>(i);
+        }
+        // displayMatrix(miu_state);
+        //  xP_SLAM 扩维
+        cv::Mat miu_convar_p_new =  Mat::zeros(3 + 2*num, 3 + 2*num, CV_32FC1);  //这个可以放到初始化函数中去  ？？初值???
+        //  displayMatrix(miu_convar_p_new);
+        // displayMatrix(miu_convar_p);
+        for (int i = 0; i < 3 + 2*num_old; i++)
+        {
+            for (int j = 0;j < 3 + 2*num_old; j++)
+            {
+                miu_convar_p_new.at<float>(i,j) = miu_convar_p.at<float>(i,j);
+            }
+        }
+
+        miu_convar_p = Mat::zeros(3 + 2*num, 3 + 2*num,CV_32FC1);   //已去掉跟s有关的项，原来是3+3*
+        for (int i = 0; i < 3 + 2*num_old; i++)
+        {
+            for (int j = 0; j < 3 + 2*num_old; j++)
+                miu_convar_p.at<float>(i,j) = miu_convar_p_new.at<float>(i,j);
+        }
+        for (int i= 3 + 2*num_old; i < 3 + 2*num;i++)
+        {
+            miu_convar_p.at<float>(i,i) = 1000000;   //对角方差要大1000000
+        }
+        return true;
+    }
+}
+
 /**
  * @brief QrSlam::storeSystemState
  * 系统状态量向量表保存
@@ -790,12 +850,12 @@ void QrSlam::storeSystemState( Mat systemState)
         landmark.y = miu_state.at<float>(4+t*2);
         if (t >= landmarks_system_.size())  //绘制第一次出现的landmark的 ID
         {
-           landmarks.push_back(landmark) ;
-           landmarks_system_.push_back(landmarks) ;
+            landmarks.push_back(landmark) ;
+            landmarks_system_.push_back(landmarks) ;
         }
         else
         {
-          landmarks_system_[t].push_back(landmark);
+            landmarks_system_[t].push_back(landmark);
         }
     }
 
@@ -874,7 +934,7 @@ Point3ffi QrSlam::addObservationPos(ConerPoint landmarktemp ,int id )
  * 逐步筛选observations_中的量，与已有的observed_landmark_num向量表匹配，
  * observations_中第一次观测到的角点加入observed_landmark_num向量表中
  */
-void QrSlam::getNumQrcode(void)
+int QrSlam::getNumQrcode(void)
 {
     int Qid;
     int flag=0 ;
@@ -894,6 +954,7 @@ void QrSlam::getNumQrcode(void)
         }
         flag=0 ;
     }
+    return observed_landmark_num.size();
 }
 /**
  * @brief QrSlam::genGaussianValue
@@ -1126,7 +1187,7 @@ void QrSlam::showRobot(cv::Mat& map, RobotInfo robot_info,Scalar rgb)
     const int ROBOT_DEFAULT_RADIUS = 2;
     const int ROBOT_DEFAULT_ARROW_LEN = 10;
 
-    Point start, end;    
+    Point start, end;
     start.x = robot_info.X + MAP_BASE_X_;
     start.y = robot_info.Y + MAP_BASE_Y_;
 
@@ -1193,20 +1254,20 @@ void QrSlam::showSystemStateLandmark(cv::Mat& map, Scalar rgb)
     for (int t = 0; t < observed_landmark_num.size(); t++)
     {
 #if DISPLAY_UNDER_MARK_COORDINATE
-    Point3d robot_pose_src, robot_pose_dst;
-    robot_pose_src.x = miu_state.at<float>(3+t*2);
-    robot_pose_src.y = miu_state.at<float>(4+t*2);     // ****坐标系反转  逆转实际为负  测量为正
-   // robot_pose_src.z = miu_state.at<float>(2);
-    WorldToMark3(robot_pose_dst,robot_pose_src);
+        Point3d robot_pose_src, robot_pose_dst;
+        robot_pose_src.x = miu_state.at<float>(3+t*2);
+        robot_pose_src.y = miu_state.at<float>(4+t*2);     // ****坐标系反转  逆转实际为负  测量为正
+        // robot_pose_src.z = miu_state.at<float>(2);
+        WorldToMark3(robot_pose_dst,robot_pose_src);
 
-    float X= robot_pose_dst.x + MAP_BASE_X_;
-    float Y= robot_pose_dst.y + MAP_BASE_Y_;
+        float X= robot_pose_dst.x + MAP_BASE_X_;
+        float Y= robot_pose_dst.y + MAP_BASE_Y_;
 #else
         float X= miu_state.at<float>(3+t*2)+ MAP_BASE_X_;
         float Y= miu_state.at<float>(4+t*2)+ MAP_BASE_Y_;
 #endif
-//        float X= miu_state.at<float>(3+t*2)+ MAP_BASE_X_;
-//        float Y= miu_state.at<float>(4+t*2)+ MAP_BASE_Y_;
+        //        float X= miu_state.at<float>(3+t*2)+ MAP_BASE_X_;
+        //        float Y= miu_state.at<float>(4+t*2)+ MAP_BASE_Y_;
         Y = map.rows - Y ;
         state_miu << "  " << t << " " << X << "  " << Y;
         cv::circle(map,Point( X,Y),1,rgb,2); //绘制mark位置
@@ -1255,14 +1316,14 @@ void QrSlam::showSystemStateRobot(cv::Mat& map, Scalar rgb)
     frobot  <<  " "   <<  miu_state.at<float>(0)  << " " <<  miu_state.at<float>(1)  <<  endl;
     int temp_X = robot_pose_dst.x + MAP_BASE_X_;
     int temp_Y = robot_pose_dst.y + MAP_BASE_Y_;
-        temp_Y = map.rows - temp_Y ;
+    temp_Y = map.rows - temp_Y ;
     cv::circle(map,Point( temp_X,temp_Y),1,CV_RGB(0, 255,0),1); //绘制 robot
 #else
     cout  <<  miu_state.cols  <<  " "  <<  miu_state.rows  <<  endl;
     frobot  <<  " "   <<  miu_state.at<float>(0)  << " " <<  miu_state.at<float>(1)  <<  endl;
     int temp_X = miu_state.at<float>(0) + MAP_BASE_X_;
     int temp_Y = miu_state.at<float>(1) + MAP_BASE_Y_;
-        temp_Y = map.rows - temp_Y ;
+    temp_Y = map.rows - temp_Y ;
     cv::circle(map,Point( temp_X,temp_Y),1,CV_RGB(0, 255,0),1); //绘制 robot
 #endif
 
@@ -1309,3 +1370,196 @@ std::string  QrSlam::float2str(float num)
     std::string text = ss.str();
     return text;
 }
+
+
+//-------------------------------------------------------------------------------------------
+/**
+ * @brief QrSlam::motionModel
+ * 将系统运动模型更新,运动预测时系统状态不变.
+ * @param motion               输入线速度与角速度(v,w)
+ * @param system_state         系统状态量
+ * @param system_state_convar  系统协方差量
+ * @param variable_num         系统状态量数量
+ * @param delta_time           时间间隔
+ */
+Point2f QrSlam::motionModel(Point2f motion, Mat& system_state, Mat& system_state_convar, int variable_num, float delta_time)
+{
+    velocities_.push_back(motion);
+    Point2f VEL = velocities_.at(velocities_.size()-2);  //数组从0开始  又存入一值
+    Vd_ = VEL.x;
+    Wd_ = VEL.y;  //  取y  标准正向
+    if ( Vd_ < 0.006  && Vd_ >= 0)  Vd_ = 0.0;
+    else if ( Vd_ > -0.006 && Vd_ <  0)  Vd_ = 0.0;
+    if ( Wd_ <  0.00001  && Wd_ >= 0)  Wd_ = 0.00001;
+    else if ( Wd_ > -0.00001  && Wd_ <  0)  Wd_ = -0.00001;
+    cout << "Vd: " << Vd_ << "   " << " Wd " << Wd_ << " vd/wd " << Vd_/Wd_ << endl;
+
+    Mat Fx = Mat::zeros(3, 3 + 2*variable_num, CV_32FC1);
+    Fx.at<float>(0,0) = 1.0;
+    Fx.at<float>(1,1) = 1.0;
+    Fx.at<float>(2,2) = 1.0;
+    Mat miu_increase = Mat::zeros(3, 1, CV_32FC1); //算法第三行计算xPred_SLAM时的3*1矩阵
+    Point2f robot_increase;
+    float last_miu_theta = miu_state.at<float>(2) ;//上一个miu_SLAM的角度
+    angleWrap(last_miu_theta);
+    //speed mode motion increase   Wd 不能为 0
+    miu_increase.at<float>(0) =  -Vd_/Wd_ * sin(last_miu_theta) + Vd_/Wd_ * sin(last_miu_theta + Wd_ * delta_time);
+    miu_increase.at<float>(1) =   Vd_/Wd_ * cos(last_miu_theta) - Vd_/Wd_ * cos(last_miu_theta + Wd_ * delta_time);
+    miu_increase.at<float>(2) =   Wd_ * delta_time;
+    //  prediction mean
+    system_state = system_state + Fx.t()*miu_increase; // X'= X +Jaci_f(x)*delt(x)   predicted mean
+    angleWrap(system_state.at<float>(2));
+    robot_increase.x = sqrt( miu_increase.at<float>(0)* miu_increase.at<float>(0) + miu_increase.at<float>(1)*miu_increase.at<float>(1));
+    robot_increase.y =  miu_increase.at<float>(2);
+
+    //计算Gt   Jacibi_x(x,y,theita)
+    Mat Gt = Mat::zeros(3 + 2*variable_num, 3+2*variable_num, CV_32FC1);
+    Mat Gt_increase = Mat::zeros(3, 3, CV_32FC1); //用来计算Gt的3*3矩阵
+    Mat I_SLAM = Mat::eye(3 + 2*variable_num, 3+2*variable_num, CV_32FC1); //算法中的单位矩阵
+    Gt_increase.at<float>(0,2) = -Vd_/Wd_ * cos(last_miu_theta) + Vd_/Wd_ * cos(last_miu_theta+Wd_ * delta_time);
+    Gt_increase.at<float>(1,2) = -Vd_/Wd_ * sin(last_miu_theta) + Vd_/Wd_ * sin(last_miu_theta+Wd_ * delta_time);
+    Gt = I_SLAM + Fx.t() * Gt_increase*Fx ;
+
+    Mat Vt = Mat::zeros(3,2,CV_32FC1);
+    //计算Vt   Jacibi_u(v,w)
+    Vt.at<float>(0,0) = (-sin(last_miu_theta) + sin(last_miu_theta+Wd_ * delta_time))/Wd_;
+    Vt.at<float>(0,1) = Vd_*(sin(last_miu_theta)-sin(last_miu_theta+Wd_ * delta_time))/Wd_/Wd_+Vd_ * cos(last_miu_theta+Wd_ * delta_time)*delta_time/Wd_;
+    Vt.at<float>(1,0) = (cos(last_miu_theta) - cos(last_miu_theta+Wd_ * delta_time))/Wd_;
+    Vt.at<float>(1,1) = -Vd_*(cos(last_miu_theta)-cos(last_miu_theta+Wd_ * delta_time))/Wd_/Wd_+Vd_ * sin(last_miu_theta+Wd_ * delta_time)*delta_time/Wd_;
+    Vt.at<float>(2,0) = 0;
+    Vt.at<float>(2,1) = delta_time;
+
+    Mat Mt = Mat::zeros(2,2,CV_32FC1);
+    //计算Mt   motion noise ;  why add the motion noise   ?????
+    //        Mt.at<float>(0,0) = a1*Vd_*Vd_ + a2*Wd_*Wd_;
+    //        Mt.at<float>(1,1) = a3*Vd_*Vd_ + a4*Wd_*Wd_;
+    //        //        Mt.at<float>(0,0) = a1;
+    //        //        Mt.at<float>(0,1) = a2;
+    //        //        Mt.at<float>(1,0) = a3;
+    //        //        Mt.at<float>(1,1) = a4;
+
+    Mat Rt = Mat::zeros(3,3,CV_32FC1); //vv
+    //        Rt = Vt * Mt * Vt.t();//计算Rt
+    //        Rt.at<float>(0,0) = convar_x_;
+    //        Rt.at<float>(1,1) = convar_y_;
+    //        Rt.at<float>(2,2) = convar_theta_;
+
+    //  predict convar :system_state_convar
+    cout << "----------------------------------------" << endl;
+    // cout << "system_state_convar" << system_state_convar << endl;
+    system_state_convar = Gt * system_state_convar * Gt.t() + Fx.t() * Rt * Fx; //计算预测方差 Px  ??????????  xP_SLAM  与 xPred_SLAM
+    return robot_increase;
+}
+/**
+ * @brief QrSlam::updateSystemState
+ * 系统状态根据观测进行更新;
+ * @param system_state
+ * @param system_state_convar
+ * @param variable_num
+ * @param observation_Marks_per_image
+ */
+void QrSlam::updateSystemState(Mat& system_state, Mat& system_state_convar, int variable_num, vector<Point3ffi> observation_Marks_per_image)
+{
+    Mat Qt = Mat::zeros(2, 2, CV_32FC1);
+    //        Qt.at<float>(0,0) = sigma_r * sigma_r;
+    //        Qt.at<float>(1,1) = sigma_phi * sigma_phi;
+    Qt.at<float>(0,0) = convar_measure[0];
+    //  Qt.at<float>(0,1) = convar_measure[1];
+    //  Qt.at<float>(1,0) = convar_measure[2];
+    Qt.at<float>(1,1) = convar_measure[3];
+    Mat I_SLAM = Mat::eye(3 + 2*variable_num, 3+2*variable_num, CV_32FC1); //算法中的单位矩阵
+    Mat miu_temp_sum = Mat::zeros(3+2*variable_num,1,CV_32FC1); //用来计算Ht的2*5矩阵
+    Mat Kt_i_Ht_sum = Mat::zeros(3+2*variable_num,3+2*variable_num,CV_32FC1);
+
+    Mat St = Mat::zeros(2,2,CV_32FC1); //vv
+
+    /////----------------------------------------------------------------------------------------------------------
+    ///////更新----------------------------update------------------------------------------------------------------
+    int   j = 0;  // the order of Qrmark  表示观察到的 特征标记      与状态量中landmark有关
+    int   Qid = 0; //  the Id of Qrmark
+    int   is_observed = 0 ;//是否观察到过的标志  0表示从未出现过
+    float dst;
+    float theta;
+    float distance_2;
+    Point2f delta;
+    Point2f z,zp;
+    Mat delta_z;
+    for (int i=0; i< observation_Marks_per_image.size(); i++)
+    {
+        Qid = observation_Marks_per_image.at(i).z;
+        z = Point2f(observation_Marks_per_image.at(i).x,observations_.at(i).y); //观测值  是极坐标
+        for (int c=0; c<Lm_observed_Num.size(); ++c)
+        {
+            if (Qid == Lm_observed_Num[c])   //   出现过   逐一比对已经观察到的mark列表
+            {
+                is_observed = 1 ;
+                j = c;                     //  选取第j个landmark导入观察模型并进行状态更新。
+            }
+        }
+        if (is_observed == 0) //从未出现过
+        {
+            //           landmark_observed.at<float>(i)=j ;//保存住这次观测到的路标号
+            Lm_observed_Num.push_back(Qid) ;
+            j = Lm_observed_Num.size()-1 ;                // 注意 数组从0开始  -1 ？？？？？？？？？？
+            // 在观测函数 x y 极坐标系下的值。
+            system_state.at<float>(2*j+3) = system_state.at<float>(0) + z.x * cos( z.y + system_state.at<float>(2) );  //第j个landmark的y坐标
+            system_state.at<float>(2*j+4) = system_state.at<float>(1) + z.x * sin( z.y + system_state.at<float>(2) );  //第j个landmark的x坐标
+            fnewlandmark<<"robot x,y,theta "<<robot_info_.X<<" "<<robot_info_.Y<<" " <<robot_info_.Theta<<"  "<<"j "<<j<<" Qid "<< Qid
+                       <<" miu(01) "<<system_state.at<float>(0)<<" "<<system_state.at<float>(1)<<" "<<system_state.at<float>(2)  <<" 2*j+3  "<<system_state.at<float>(2*j+3)<<" 2*j+4 "<<system_state.at<float>(2*j+4)<<endl;
+        }
+        is_observed = 0 ;
+        //预测测量值   ？？？？？？反向查找运动预测中 Point2f(xPred_SLAM.at<float>(2*j+3),xPred_SLAM.at<float>(2*j+4))
+        //             不然就为加入地图mark  无变化     xPred_SLAM  都为世界坐标系下值
+        //这里的z相当于landmark的标号  （全局坐标下： 地图值- 预测机器人值）与 观测值 z ： 表示mark与robot的相对距离
+        delta = Point2f(system_state.at<float>(2*j+3), system_state.at<float>(2*j+4))-Point2f(system_state.at<float>(0),system_state.at<float>(1));
+        distance_2 = delta.x * delta.x+delta.y * delta.y ;
+        dst = sqrt(distance_2);
+        theta = atan2(delta.y, delta.x) - system_state.at<float>(2);      //偏离robot的方向角方向的角度   相对xy坐标系下值
+        zp.x = dst;
+        angleWrap(theta);
+        zp.y = theta;
+
+        //计算Fj
+        Mat Fj = Mat::zeros(5,3+2 * variable_num,CV_32FC1);
+        Fj.at<float>(0,0) = 1;
+        Fj.at<float>(1,1) = 1;
+        Fj.at<float>(2,2) = 1;
+        Fj.at<float>(3,2 * j+3) = 1;
+        Fj.at<float>(4,2 * j+4) = 1;
+
+        //计算Htjaccibi
+        Mat Ht_temp = Mat::zeros(2, 5, CV_32FC1); //用来计算Ht的2*5矩阵
+        Ht_temp.at<float>(0,0) = -delta.x * dst;
+        Ht_temp.at<float>(0,1) = -delta.y * dst;
+        Ht_temp.at<float>(0,3) = delta.x * dst;
+        Ht_temp.at<float>(0,4) = delta.y * dst;
+        Ht_temp.at<float>(1,0) = delta.y;
+        Ht_temp.at<float>(1,1) = -delta.x;
+        Ht_temp.at<float>(1,2) = -distance_2;
+        Ht_temp.at<float>(1,3) = -delta.y;
+        Ht_temp.at<float>(1,4) = delta.x;
+        Mat Ht = Mat::zeros(2, 3 + 2*variable_num, CV_32FC1);
+        ///~~~~~~~~~~~~~~~~~~
+        Ht=(1/distance_2) * Ht_temp * Fj ;
+
+        St = Ht * system_state_convar * Ht.t()+Qt;
+
+        Mat Kt = Mat::zeros(3 + 2*variable_num, 2, CV_32FC1); //
+        Kt = system_state_convar * Ht.t() * St.inv();
+        z = z-zp;       //  更新的处理
+        angleWrap(z.y);
+
+        delta_z = Mat::zeros(2,1,CV_32FC1);
+        delta_z.at<float>(0) = z.x;
+        delta_z.at<float>(1) = z.y;
+
+        miu_temp_sum = miu_temp_sum + Kt * delta_z ;
+        Kt_i_Ht_sum = Kt_i_Ht_sum + Kt * Ht;
+    }
+
+    system_state = system_state + miu_temp_sum ;  // xPred_SLAM 关于landmark为极坐标值
+    angleWrap(system_state.at<float>(2));
+    system_state_convar = (I_SLAM-Kt_i_Ht_sum) * system_state_convar;
+    system_state_convar =  0.5*(system_state_convar + system_state_convar.t());
+}
+

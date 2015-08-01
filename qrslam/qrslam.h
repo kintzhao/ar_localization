@@ -123,26 +123,28 @@ public :
 //    const float a3 = 0.1203;//0.1;
 //    const float a4 = -0.0037;//0.1;
 
-    const float a1 = 0.5;//0.1;
-    const float a2 = 0.0032;//0.1;
-    const float a3 = 0.0032;//0.1;
-    const float a4 = 0.0016;//0.1;
+     const float a1 = 0.5;//0.1;
+     const float a2 = 0.0032;//0.1;
+     const float a3 = 0.0032;//0.1;
+     const float a4 = 0.0016;//0.1;
 
 
 //    const float a5 = 0.1;
 //    const float a6 = 0.1;          //a1-a6为速度和里程计模型噪声参数
-    const float sigma_r = 0.1;
-    const float sigma_phi = 0.1;   //观测模型噪声
+     const float sigma_r = 0.1;
+     const float sigma_phi = 0.1;   //观测模型噪声
+     const float p_init_x_ = 0.0001;        // 0.1;//0.1;//1;//100;//0.1;
+     const float p_init_y_ = 0.0001;        //0.10;//0.1;//1;//100;//0.1;
+     const float p_init_theta_ = 0.02618;    //0.38;//0.1;//0.38;
+     const float convar_x_ = 0.0005;        // 0.1;//0.1;//1;//100;//0.1;
+     const float convar_y_ = 0.0005;        //0.10;//0.1;//1;//100;//0.1;
+     const float convar_theta_ = 0.000685;    //0.38;//0.1;//0.38;
 
-    const float p_init_x_ = 0.0001;        // 0.1;//0.1;//1;//100;//0.1;
-    const float p_init_y_ = 0.0001;        //0.10;//0.1;//1;//100;//0.1;
-    const float p_init_theta_ = 0.02618;    //0.38;//0.1;//0.38;
+     const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
 
-    const float convar_x_ = 0.0005;        // 0.1;//0.1;//1;//100;//0.1;
-    const float convar_y_ = 0.0005;        //0.10;//0.1;//1;//100;//0.1;
-    const float convar_theta_ = 0.000685;    //0.38;//0.1;//0.38;
-
-   const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
+     const float update_odom_linear = 0.05;
+     const float update_odom_angle = 0.05;
+     const float stamp_interval = 0.06;
 //   const float convar_measure[4] = {10, 0, 0, 1.6933 };  //静态下
 //   const float convar_measure[4] = {10, 0, 0, 0.6933 };  //
 //   const float convar_measure[4] = {1.9337,0,0,0.0040};  //静态下
@@ -175,7 +177,7 @@ public :
     int mark_num_;
     int visual_mark_num_;
 
-    void ekfSlam(float V, float W);
+    void ekfSlam_old(float V, float W);
     Point3f PosNow ;
     double  odom_aver(double *Vodom, int n);
 
@@ -216,7 +218,7 @@ public:
     std::string  int2str(int num);
     std::string  float2str(float num) ;
     void  showImage() ;
-    void  getNumQrcode(void);
+    int getNumQrcode(void);
     void  getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void  robotPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg );
     void  qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg);
@@ -265,6 +267,14 @@ public:
     void WorldToMark3(Point3d &dst, Point3d src);
     void WorldToMark2(Point3f &dst, Point3f src);
     void WorldToMark2(Point3d &dst, Point3d src);
+    bool stateExtended(int num, int num_old);
+    ros::Time odom_stamp;
+    ros::Time image_stamp;
+    bool IS_MAP_UPDATE;
+    void ekfSlam(float V, float W);
+    Point2f motionModel(Point2f motion, Mat& system_state, Mat& system_state_convar, int variable_num, float delta_time);
+    void updateSystemState(Mat& system_state, Mat& system_state_convar, int variable_num, vector<Point3ffi> observation_Marks_per_image);
+
 };
 
 #endif
