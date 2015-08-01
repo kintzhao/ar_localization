@@ -155,7 +155,8 @@ public:
     /// public method
 //    vector<QrLandMark> detectLandmarks(cv::Mat image, int &MarkNum, Pose3D robPostion, Mat &qr_img) ;
     vector<CPointsFour> detectLandmarks(cv::Mat image, int &MarkNum) ;
-    void imTotruePos(double &ar_mode_width, double &ar_mode_height, int id);
+    //void imTotruePos(double &ar_mode_width, double &ar_mode_height, int id);
+    ConerPoint  imTotruePos(double width,double height,int id);
     std::string  int2str(int num);
     void PosToXY(double &ar_mode_width,double &ar_mode_height,double delta);
     CPointsFourWorld getInitMarkMessage(const int id);

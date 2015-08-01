@@ -143,7 +143,7 @@ public :
      const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
 
      const float update_odom_linear = 0.05;
-     const float update_odom_angle = 0.05;
+     const float update_odom_angle = 0.0005;
      const float stamp_interval = 0.06;
 //   const float convar_measure[4] = {10, 0, 0, 1.6933 };  //静态下
 //   const float convar_measure[4] = {10, 0, 0, 0.6933 };  //
@@ -197,7 +197,7 @@ public:
 
     int     odom_i;
     int  odom_init_;
-    bool init_EKF_value_;
+    bool Is_ekfslam_init;
     bool init_state_;
 
 

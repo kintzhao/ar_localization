@@ -930,11 +930,11 @@ void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
     std::string text_h ="h"+ int2str(point_four.center.Y);
     cv::putText(show_landmark_img_,text_h,Point(140,200),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
 
-    imTotruePos( point_four.corn0.X, point_four.corn0.Y,point_four.ID);
-    imTotruePos( point_four.corn1.X, point_four.corn1.Y,point_four.ID);
-    imTotruePos( point_four.corn2.X, point_four.corn2.Y,point_four.ID);
-    imTotruePos( point_four.corn3.X, point_four.corn3.Y,point_four.ID);
-    imTotruePos(point_four.center.X,point_four.center.Y,point_four.ID);
+    point_four.corn0 = imTotruePos( point_four.corn0.X, point_four.corn0.Y,point_four.ID);
+    point_four.corn1 = imTotruePos( point_four.corn1.X, point_four.corn1.Y,point_four.ID);
+    point_four.corn2 = imTotruePos( point_four.corn2.X, point_four.corn2.Y,point_four.ID);
+    point_four.corn3 = imTotruePos( point_four.corn3.X, point_four.corn3.Y,point_four.ID);
+    point_four.center = imTotruePos(point_four.center.X,point_four.center.Y,point_four.ID);
 
     std::string text_x ="x"+ int2str(point_four.center.X);
     cv::putText(show_landmark_img_,text_x,Point(20,260),CV_FONT_HERSHEY_COMPLEX,1,CV_RGB(255,0,0));
@@ -951,7 +951,22 @@ void DetctQrcode::imCornerToWorld(CPointsFour &point_four)
  * @param height    高（x向）--> y
  * @param id
  */
-void DetctQrcode::imTotruePos(double &width,double &height,int id)
+
+//void DetctQrcode::imTotruePos(double &width,double &height,int id)
+//{
+//    double centXoff = height - camInnerPara.dy;
+//    double centYoff = camInnerPara.dx - width ;          //采取内参校正数值
+////    double centXoff = height -240;
+////    double centYoff = 320 - width ;
+//    //double camInnerFocus =sqrt(camInnerPara.fx*camInnerPara.fx + camInnerPara.fy* camInnerPara.fy) ;
+//    double x_cm  = centXoff * ht_[id] / camInnerPara.fy; //camInnerFocus;
+//    double y_cm =  centYoff * ht_[id] / camInnerPara.fx; //camInnerFocus;
+
+//    width  = x_cm;
+//    height = y_cm;       // X-Height   Y-Width
+//}
+
+ConerPoint DetctQrcode::imTotruePos(double width,double height,int id)
 {
     double centXoff = height - camInnerPara.dy;
     double centYoff = camInnerPara.dx - width ;          //采取内参校正数值
@@ -961,9 +976,14 @@ void DetctQrcode::imTotruePos(double &width,double &height,int id)
     double x_cm  = centXoff * ht_[id] / camInnerPara.fy; //camInnerFocus;
     double y_cm =  centYoff * ht_[id] / camInnerPara.fx; //camInnerFocus;
 
-    width  = x_cm;
-    height = y_cm;       // X-Height   Y-Width
+//    width  = x_cm;
+//    height = y_cm;       // X-Height   Y-Width
+    ConerPoint cornPoint;
+    cornPoint.init(x_cm,y_cm);
+   return  cornPoint;
 }
+
+
 
 void DetctQrcode::PosToXY(double &width,double &height,double delta)
 {
