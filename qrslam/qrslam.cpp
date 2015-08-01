@@ -1542,7 +1542,7 @@ void QrSlam::ekfSlam(float V,float W)
         cout << " motion predict" << endl;
         Point2f robot_increase = motionModel(Point2f(V,W), miu_state, miu_convar_p, observed_mark_num_old, delta_t_);
         cout << "observation start !" << endl;
-        if( is_img_update_ && ((robot_increase.x >= update_odom_linear ) || (robot_increase.y >= update_odom_angle )))
+        if( is_img_update_ && ( (robot_increase.x >= update_odom_linear ) || (robot_increase.y >= update_odom_angle ) ) )
         {
             cout << " get observation" << endl;
             genObservations();
