@@ -26,8 +26,13 @@ ofstream fnewlandmark("newlandmark.txt");  //矩阵输出存放位置
 ofstream fcoordinate_init("coordinate_init.txt");
 
 ofstream ftimeStamp("time.txt");
+ofstream fStamp("stamp.txt");
+
 QrSlam::QrSlam(char* addr):transport_( ar_handle)
 {
+    last_update_pose.x = 0.0;
+    last_update_pose.y = 0.0;
+    last_update_pose.z = 0.0;
     is_odom_update = false;
     is_img_update_  = false;
     data_filter_num = 0;
@@ -1037,7 +1042,6 @@ void  QrSlam::showImage()
     showSystemStateLandmark(global_map_temp,CV_RGB(0,0,255));
     slam_img_cvt_->convertOnce(global_map_temp);
 #endif
-
     showRobotOrientation(cv_camera_, robot_info_,CV_RGB(0,0,0),50,50);
     showRobotOrientation(cv_camera_, miu_state,CV_RGB(0,0,0),300,50);
 
@@ -1280,8 +1284,6 @@ void QrSlam::showSystemStateRobot(cv::Mat& map, Scalar rgb)
 
 }
 
-
-
 void QrSlam::drawCoordinate(cv::Mat& mat)
 {
     std::string text ="Y";
@@ -1320,8 +1322,6 @@ std::string  QrSlam::float2str(float num)
     std::string text = ss.str();
     return text;
 }
-
-
 //-------------------------------------------------------------------------------------------
 /**
  * @brief QrSlam::motionModel
@@ -1453,12 +1453,13 @@ void QrSlam::updateSystemState(Mat& system_state, Mat& system_state_convar, int 
             // 在观测函数 x y 极坐标系下的值。
             system_state.at<float>(2*j+3) = system_state.at<float>(0) + z.x * cos( z.y + system_state.at<float>(2) );  //第j个landmark的y坐标
             system_state.at<float>(2*j+4) = system_state.at<float>(1) + z.x * sin( z.y + system_state.at<float>(2) );  //第j个landmark的x坐标
+
             fnewlandmark<<"robot x,y,theta "<<robot_info_.X<<" "<<robot_info_.Y<<" " <<robot_info_.Theta<<"  "<<"j "<<j<<" Qid "<< Qid
-                       <<" miu(01) "<<system_state.at<float>(0)<<" "<<system_state.at<float>(1)<<" "<<system_state.at<float>(2)  <<" 2*j+3  "<<system_state.at<float>(2*j+3)<<" 2*j+4 "<<system_state.at<float>(2*j+4)<<endl;
+                       <<" miu(01) "<<system_state.at<float>(0)<<" "<<system_state.at<float>(1)<<" "<<system_state.at<float>(2)<<
+                         " 2*j+3  "<<system_state.at<float>(2*j+3) <<" 2*j+4 "<<system_state.at<float>(2*j+4)<<" z.x-y "<<z.x<<" "<<z.y<<endl;
         }
         else
         {
-            //  不然就为加入地图mark  无变化     xPred_SLAM  都为世界坐标系下值
             //这里的z相当于landmark的标号  （全局坐标下： 地图值- 预测机器人值）与 观测值 z ： 表示mark与robot的相对距离
             delta = Point2f(system_state.at<float>(2*j+3), system_state.at<float>(2*j+4)) - Point2f(system_state.at<float>(0),system_state.at<float>(1));
             distance_2 = delta.x * delta.x + delta.y * delta.y ;
@@ -1469,7 +1470,7 @@ void QrSlam::updateSystemState(Mat& system_state, Mat& system_state_convar, int 
             zp.y = theta;
 
             //计算Fj
-            Mat Fj = Mat::zeros(5,3+2 * variable_num,CV_32FC1);
+            Mat Fj = Mat::zeros(5, 3+2 * variable_num, CV_32FC1);
             Fj.at<float>(0,0) = 1;
             Fj.at<float>(1,1) = 1;
             Fj.at<float>(2,2) = 1;
@@ -1488,7 +1489,7 @@ void QrSlam::updateSystemState(Mat& system_state, Mat& system_state_convar, int 
             Ht_temp.at<float>(1,3) = -delta.y;
             Ht_temp.at<float>(1,4) =  delta.x;
             Mat Ht = Mat::zeros(2, 3 + 2*variable_num, CV_32FC1);
-            ///~~~~~~~~~~~~~~~~~~
+            //~~~~~~~~~~~~~~~~~~
             Ht=(1/distance_2) * Ht_temp * Fj ;
             St = Ht * system_state_convar * Ht.t()+Qt;
 
@@ -1501,13 +1502,19 @@ void QrSlam::updateSystemState(Mat& system_state, Mat& system_state_convar, int 
             delta_z.at<float>(0) = z.x;
             delta_z.at<float>(1) = z.y;
 
-            miu_temp_sum = miu_temp_sum + Kt * delta_z ;
-            Kt_i_Ht_sum = Kt_i_Ht_sum + Kt * Ht;
+            //            miu_temp_sum = miu_temp_sum + Kt * delta_z ;
+            //            Kt_i_Ht_sum = Kt_i_Ht_sum + Kt * Ht;
+            //        }
+            //    }
+            //    system_state = system_state + miu_temp_sum ;  // xPred_SLAM 关于landmark为极坐标值
+            //    angleWrap(system_state.at<float>(2));
+            //    system_state_convar = (I_SLAM-Kt_i_Ht_sum) * system_state_convar;
+
+            system_state  =  system_state + Kt * delta_z;  // xPred_SLAM 关于landmark为极坐标值
+            angleWrap(system_state_convar.at<float>(2));
+            system_state_convar =  (I_SLAM - Kt * Ht) * system_state_convar;
         }
     }
-    system_state = system_state + miu_temp_sum ;  // xPred_SLAM 关于landmark为极坐标值
-    angleWrap(system_state.at<float>(2));
-    system_state_convar = (I_SLAM-Kt_i_Ht_sum) * system_state_convar;
     system_state_convar =  0.5*(system_state_convar + system_state_convar.t());
 }
 
@@ -1530,7 +1537,6 @@ void QrSlam::ekfSlam(float V,float W)
         miu_convar_p.at<float>(2,2) = p_init_theta_ ; //0.38;//0.1;//0.38;
 
         Is_ekfslam_init = false;
-        TimeOld_ = Time_;
         velocities_.push_back(Point2f(V,W));
     }
     else
@@ -1542,22 +1548,36 @@ void QrSlam::ekfSlam(float V,float W)
         cout << " motion predict" << endl;
         Point2f robot_increase = motionModel(Point2f(V,W), miu_state, miu_convar_p, observed_mark_num_old, delta_t_);
         cout << "observation start !" << endl;
-        if( is_img_update_ && ( (robot_increase.x >= update_odom_linear ) || (robot_increase.y >= update_odom_angle ) ) )
+        Point2f update_increase,increase_xy;
+        increase_xy.x = miu_state.at<float>(0) - last_update_pose.x ;
+        increase_xy.y = miu_state.at<float>(1) - last_update_pose.y ;
+        update_increase.x = sqrt( increase_xy.x * increase_xy.x + increase_xy.y * increase_xy.y);
+        update_increase.y = abs( last_update_pose.z - miu_state.at<float>(2) );
+
+        double delta_stamp = (image_stamp - odom_stamp).toSec();
+        if(is_img_update_ && ( abs(delta_stamp) <= stamp_interval) )
         {
-            cout << " get observation" << endl;
-            genObservations();
-            int observed_mark_num = getNumQrcode();
-            cout << "--observed_mark_num_old--" << observed_mark_num_old << "--observed_mark_num----" << observed_mark_num << endl;
-            if( !stateExtended(observed_mark_num, observed_mark_num_old) ) //系统状态扩维与协方差扩维
+            fStamp <<" image_stamp "<<image_stamp<<" odom_stamp "<<odom_stamp<<" delta_stamp "<<delta_stamp<<endl;
+            if( ( (update_increase.x >= update_odom_linear ) || (update_increase.y >= update_odom_angle ) ) )
             {
-                exit(0);
+                cout << " get observation" << endl;
+                genObservations();
+                int observed_mark_num = getNumQrcode();
+                cout << "--observed_mark_num_old--" << observed_mark_num_old << "--observed_mark_num----" << observed_mark_num << endl;
+                if( !stateExtended(observed_mark_num, observed_mark_num_old) ) //系统状态扩维与协方差扩维
+                {
+                    exit(0);
+                }
+                observed_mark_num_old = observed_mark_num;
+                cout << " system update" << endl;
+                updateSystemState(miu_state, miu_convar_p, observed_mark_num_old, observations_);
+                last_update_pose.x = miu_state.at<float>(0);
+                last_update_pose.y = miu_state.at<float>(1);
+                last_update_pose.z = miu_state.at<float>(2);
             }
-            observed_mark_num_old = observed_mark_num;
-            cout << " system update" << endl;
-            updateSystemState(miu_state, miu_convar_p, observed_mark_num_old, observations_);
         }
-        TimeOld_ = Time_;
     }
+    TimeOld_ = Time_;
     storeSystemState(miu_state);
 }
 

@@ -43,7 +43,7 @@
 #define IS_OPEN_DATA_FILTER 0      //   角速度打开数据滤波
 #define IS_OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
 #define IS_OPEN_ROBOT_POSE_EKF_FILTER 0      //   robot_pose_ekf
-#define SELECT_LANDMARK_NUM 0   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
+#define SELECT_LANDMARK_NUM 1   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
 #define IS_OPEN_DYNAMIC_MAP 0   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的整个过程
 #define DISPLAY_UNDER_MARK_COORDINATE 1   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的显示landmark整个过程
 
@@ -123,7 +123,7 @@ public :
 //    const float a3 = 0.1203;//0.1;
 //    const float a4 = -0.0037;//0.1;
 
-     const float a1 = 0.5;//0.1;
+     const float a1 = 0.05;//0.1;
      const float a2 = 0.0032;//0.1;
      const float a3 = 0.0032;//0.1;
      const float a4 = 0.0016;//0.1;
@@ -142,9 +142,9 @@ public :
 
      const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
 
-     const float update_odom_linear = 0.05;
-     const float update_odom_angle = 0.005;
-     const float stamp_interval = 0.06;
+     const float update_odom_linear = 4;
+     const float update_odom_angle  = 0.17;
+     const float stamp_interval = 0.002;
 //   const float convar_measure[4] = {10, 0, 0, 1.6933 };  //静态下
 //   const float convar_measure[4] = {10, 0, 0, 0.6933 };  //
 //   const float convar_measure[4] = {1.9337,0,0,0.0040};  //静态下
@@ -274,7 +274,7 @@ public:
     void ekfSlam(float V, float W);
     Point2f motionModel(Point2f motion, Mat& system_state, Mat& system_state_convar, int variable_num, float delta_time);
     void updateSystemState(Mat& system_state, Mat& system_state_convar, int variable_num, vector<Point3ffi> observation_Marks_per_image);
-
+    Point3f  last_update_pose;
 };
 
 #endif

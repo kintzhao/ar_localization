@@ -5,6 +5,8 @@
 #define SELECT_ROBOT_POS_AS_ORIGIN  0 // 0 表示20 mark 为原点
 int main(int argc, char** argv)
 {
+    int tt=0;
+    int z=tt+1;
     ros::init(argc, argv, "qr_slam");
     QrSlam qr_slam(argv[1]);
  //   ros::Rate loop_rate(50);  // 系统频率放开
