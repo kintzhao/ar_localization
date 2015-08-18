@@ -43,9 +43,11 @@
 #define IS_OPEN_DATA_FILTER 0      //   角速度打开数据滤波
 #define IS_OPEN_BUBBLE_FILTER 0      //   角速度打开数据滤波_冒泡：去大小值
 #define IS_OPEN_ROBOT_POSE_EKF_FILTER 0      //   robot_pose_ekf
-#define SELECT_LANDMARK_NUM 1   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
+#define IS_ONE_POINT_AS_LANDMARK 0   //  从2D mark中提取landmark的数量  1只选择中心点 ；0 选择五点
 #define IS_OPEN_DYNAMIC_MAP 0   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的整个过程
-#define DISPLAY_UNDER_MARK_COORDINATE 1   // 0 表示只绘制当前的系统状态landmark,深度复制 ;1表示动态的显示landmark整个过程
+#define DISPLAY_UNDER_MARK_COORDINATE 0   // 0表示在odom坐标系下 ;1表示转换到mark下的显示
+#define IS_ALL_SYSTEM_AS_MARK_COORDNATE 1   //PS: 与 DISPLAY_UNDER_MARK_COORDINATE 存在两者分立,不开同时  ekfslam初始就进行转换
+
 
 using ARToolKitPlus::TrackerSingleMarker;
 using ARToolKitPlus::ARMarkerInfo;
@@ -87,6 +89,18 @@ typedef struct RobotInfo
     double Y;
 }RobotInfo;
 
+
+
+typedef struct OdomRecorder
+{
+    ros::Time  recorder_time;
+    double vel;
+    double angleVel;
+    double Theta;
+    double X;
+    double Y;
+}OdomRecorder;
+
 using namespace std;
 using namespace cv;
 class QrSlam
@@ -100,8 +114,13 @@ public :
     vector<Point3f> landmarks_;            // 2d-->3d
     vector<Point2f> velocities_;          //For velocity model,用来保存直线和角输入,其保存的第一个元素为零，第二个元素代表从第一个位置与第二个位置之间的速度，以此类推
     vector<Point3ffi> observations_;
+    vector<Point3ffi> observations_add_new_;
+    vector<int> observations_add_new_num_;
+    vector< vector<Point3ffi> > observations_new_vector_;
+
+
     vector<Point3f> est_path_points_;       //估计所得路点
-    vector< vector<Point2f> > landmarks_system_;       //估计所得路点
+    vector< vector<Point3f> > landmarks_system_;       //估计所得路点
     Mat xP; 		                     //当前时刻所估计得到的机器人位姿协方差矩阵
 
     ///////////////////////EKFSLAM变量
@@ -140,11 +159,14 @@ public :
      const float convar_y_ = 0.0005;        //0.10;//0.1;//1;//100;//0.1;
      const float convar_theta_ = 0.000685;    //0.38;//0.1;//0.38;
 
-     const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
+//     const float convar_measure[4] = {310.1275, 0, 0, 1.6933 };  //静态下
+     const float convar_measure[4] = {400, 0, 0, 1.6933 };  //静态下
 
-     const float update_odom_linear = 4;
-     const float update_odom_angle  = 0.17;
-     const float stamp_interval = 0.002;
+//     const float update_odom_linear_ = 4;
+     const float update_odom_linear_ = 0.5;
+     const float update_odom_angle_  = 0.17;
+     const float stamp_interval = 0.005;//0.002;
+
 //   const float convar_measure[4] = {10, 0, 0, 1.6933 };  //静态下
 //   const float convar_measure[4] = {10, 0, 0, 0.6933 };  //
 //   const float convar_measure[4] = {1.9337,0,0,0.0040};  //静态下
@@ -164,7 +186,10 @@ public :
     float Wd_;                            //控制输入角速度（rad/s)，，，INSERTPATHPOINT函数里面的Wr和Vr是加入噪声的，真实的速度
 
     timeb TimeOld_, Time_;
+    ros::Time time_bag_,time_bag_old;
     float delta_t_;                             //控制和观察周期
+
+
 
     void    genObservations();         //定义观测模型
     void    angleWrap(float& angle);
@@ -183,8 +208,9 @@ public :
 
 public:
     RobotInfo robot_info_;
+    vector<OdomRecorder>  odom_recorder_lists;
 
-    vector<QrLandMark> landmark_vector_;
+    vector<QrLandMark>  landmark_vector_;
     vector<CPointsFour> landmark5_vector_;
     vector<CPointsFour> mark5_init_vector_;
 
@@ -218,7 +244,8 @@ public:
     std::string  int2str(int num);
     std::string  float2str(float num) ;
     void  showImage() ;
-    int getNumQrcode(void);
+    int   getNumQrcode(void);
+    int   getNumQrcodeAndChangeCurrentObservations(void);
     void  getOdomterCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void  robotPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg );
     void  qrDetectCallback(const sensor_msgs::ImageConstPtr& img_msg);
@@ -270,11 +297,24 @@ public:
     bool stateExtended(int num, int num_old);
     ros::Time odom_stamp;
     ros::Time image_stamp;
+    ros::Time odom_init_stamp; //初始下的时间戳
     bool IS_MAP_UPDATE;
     void ekfSlam(float V, float W);
+    void ekfSlam_record_bag(float V, float W);
     Point2f motionModel(Point2f motion, Mat& system_state, Mat& system_state_convar, int variable_num, float delta_time);
-    void updateSystemState(Mat& system_state, Mat& system_state_convar, int variable_num, vector<Point3ffi> observation_Marks_per_image);
+    void updateSystemState(Mat& system_state, Mat& system_state_convar, int variable_num, vector<Point3ffi>& observation_Marks_per_image);
+    bool select_best_odom(OdomRecorder& best_odom, vector<OdomRecorder>& odom_vector, ros::Time img_ros_time);
+    bool data_coordinate();
+    Point3ffi aver_observation_to_new(vector<Point3ffi> obser_vector);
     Point3f  last_update_pose;
+    int  Init_mark_in_systemState_j;
+    vector<int>  landmark_num;
+    cv::Mat global_map_for_Destructor_; //析构的时候可以保存图片
+
+    int num_EKFSlam_predict_;  //记录预测次数
+    int num_EKFSlam_update_;  //记录更新次数
+    int num_time_interval;
+    OdomRecorder best_odom;
 };
 
 #endif

@@ -125,13 +125,18 @@
 
     16  odom校准
 
-    17 固定坐标mark纠偏
+    17  固定坐标mark纠偏  ||  多mark 线性纠偏
+     坐标系整体纠偏调整.
 
+    18  利用角点方式与mark标示的方式  作为landmark:
+       1)  提取角点 + 角点描述
 
+    19   坡度自适应的情况 :自身量测高度与观测求高度 ++> 实际需要的正确自适应
 
+    20  储存数据队列匹配,时间最近匹配
+        时间的一致性,必须保持,预测与更新必须使用时间戳的时间.
 
-
-
+    21  ekfslam update 新特征加入时先建立向量表,在向表中均值化后再进行地图更新
 
 
 This directory contains material supporting chapter 9 of the cookbook:  
